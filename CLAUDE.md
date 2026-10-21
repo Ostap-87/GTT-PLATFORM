@@ -13,9 +13,10 @@ White label платформа для организаторов деловых 
   оставляй версию платформы. Обратно в GTT-APP конструктор и white label не переносим.
 - Коммит GTT-APP «Разделение…» (ac3722d), который убрал там white label, здесь уже учтён без применения (`merge -s ours`),
   поэтому слияния из GTT-APP конструктор не удаляют.
-- Свой проект Expo: `mobile/app.json` — «GTT Platform», slug `gttplatform`; свой QR-код в сводке прогона «Приложение — Expo Go».
-  Нужен секрет `EXPO_TOKEN` в настройках **этого** репозитория. Первый прогон сам создаёт проект Expo и дописывает
-  `projectId` в `app.json`.
+- Свой проект Expo `@ostap87s-team/gttplatform` (https://expo.dev/accounts/ostap87s-team/projects/gttplatform, создан
+  21.10.2026): `mobile/app.json` — «GTT Platform», slug `gttplatform`, свой `projectId`; QR-код — в сводке прогона
+  «Приложение — Expo Go». Секрет `EXPO_TOKEN` — в настройках **этого** репозитория. При слиянии из GTT-APP `mobile/app.json`
+  всегда остаётся платформенным (название, slug, `projectId`, адрес обновлений).
 - Документы и дизайн приложения GTT (`docs/architecture.md`, `design/`) ведутся в GTT-APP; здесь — их копии из слияний.
   Решения по white label записывай в `docs/decisions.md` этого репозитория.
 
