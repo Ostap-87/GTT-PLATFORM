@@ -217,3 +217,20 @@ Expo меняется от версии к версии: перед работо
   `TODAY_BLOCKS` (`tenant.ts`) + ветка в `block()`.
 - Проверка в браузере: начинать с `/demo` или `/join?code=…`; стартовый экран GTT с 3D-заставкой «вешает» безголовый Chromium.
 
+## Кабинет организатора (21.10.2026)
+
+- **Экран** — `src/app/org.tsx` (`/org`, `/org?new=1`, `/org?id=<id>&step=company|brand|programs|trip|people|invite`).
+  Шаги — `src/ui/org-steps.tsx`, форма бренда — `src/ui/brand-form.tsx` (её же использует `/builder`), предпросмотр
+  телефона и плитки действий — `src/ui/org-ui.tsx`.
+- **Данные** — `src/data/org.ts`: `OProgram` (дни → события: время, название, место, тип), `OTrip` (программа, дата начала,
+  отель, участники, `published`), `Org` (контакты, программы, поездки, `active`). Хранятся по ключу `org.<id>`.
+  `buildOrgTrip` собирает из поездки организатора данные приложения участника (как `buildTrip` для программ сайта);
+  `applyOrg` (`src/data/active.ts`) подставляет их и группу — участники встают на места демо-делегатов (те же id).
+- **Загрузка файлов** — `src/data/import.ts`: `pickFile` → `importProgram` (`readXlsx`, `readCsv`, `readDocx`, `readPdf`) →
+  `programsFromRows` (таблица по заголовкам столбцов) или `programFromLines` (текст по строкам «День 2 — Шанхай»,
+  «10:00 Визит…»). Участники — `importPeople`. Шаблоны Excel — `programTemplate`, `peopleTemplate`.
+- **PDF** — pdf.js 4.10 (legacy) лежит в `public/pdfjs/` и загружается в браузере мимо сборщика; путь сайта — `webBase()`.
+- **QR-код** — `src/data/qr.ts` (`qrcode-generator`), SVG через `SvgXml`.
+- **Веб-версия** — `.github/workflows/pages.yml` (GitHub Pages, путь `/GTT-PLATFORM`).
+- Пакеты `fflate` и `qrcode-generator` — чистый JS, работают и в Expo Go.
+

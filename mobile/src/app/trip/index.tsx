@@ -9,7 +9,7 @@ import { GUIDE } from '@/data/extras';
 import { NOW, VISITS, toMin } from '@/data/group';
 import { routeText } from '@/data/route';
 import { TENANT, TOOLS, type TodayBlock } from '@/data/tenant';
-import { CITY, DAYS, DAY_NOTES, TRIP, WEATHER, dayEvents, hotelOf, weatherLine, type TripEvent } from '@/data/trip';
+import { CITY, DAYS, DAY_NOTES, TRIP, WEATHER, dayEvents, hotelOf, monthOf, weatherLine, type TripEvent } from '@/data/trip';
 import { useCoord } from '@/state/coord';
 import { useToast } from '@/state/toast';
 import { useTrip } from '@/state/trip';
@@ -124,7 +124,7 @@ export default function Today() {
   };
 
   return (
-    <Screen eyebrow={`${d.wd}, ${d.n} ноября · ${CITY[i]}${w.max ? ` · ${w.max}` : ''}`} title="Сегодня"
+    <Screen eyebrow={`${d.wd}, ${d.n} ${monthOf(i)} · ${CITY[i]}${w.max ? ` · ${w.max}` : ''}`} title="Сегодня"
       right={<Button title="Сменить поездку" kind="light" small label={`Сменить поездку. Сейчас: ${TRIP.title}`} onPress={() => router.push('/demo')} />}>
       <OfflineNote />
       <Card onPress={() => router.push('/search')} label="Поиск по поездке" style={{ paddingVertical: 13, borderRadius: 18 }}>

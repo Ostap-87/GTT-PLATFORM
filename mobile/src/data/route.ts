@@ -3,7 +3,7 @@
 // Данные — из тестовой поездки (trip.ts) или программы сайта (data/demo-trip.ts); на шаге 2 придут с сервера.
 import { VISITS } from './group';
 import type { MapLeg, MapStop } from './map-route';
-import { CULTURE, DAYS, HOTELS, WEATHER, dayEvents } from './trip';
+import { CULTURE, DAYS, HOTELS, WEATHER, dayEvents, monthOf } from './trip';
 
 export type Stop = { key: string; ru: string; zh: string; lng: number; lat: number; days: number[]; hotel?: string; side: 'left' | 'right' };
 export type Leg = { from: string; to: string; how: 'plane' | 'train'; day: number; time: string; note: string };
@@ -28,7 +28,7 @@ export const LEGS: Leg[] = [
 export const MOSCOW = { key: 'moscow', ru: 'Москва', zh: '莫斯科' };
 export const pointOf = (key: string) => (key === 'moscow' ? MOSCOW : STOPS.find((s) => s.key === key)!);
 export const dayShort = (i: number) => `${DAYS[i].wd} ${DAYS[i].n}`;
-export const stopDays = (s: Stop) => (s.days.length > 1 ? `${dayShort(s.days[0])} – ${dayShort(s.days[s.days.length - 1])} ноября` : `${dayShort(s.days[0])} ноября`);
+export const stopDays = (s: Stop) => (s.days.length > 1 ? `${dayShort(s.days[0])} – ${dayShort(s.days[s.days.length - 1])} ${monthOf(s.days[s.days.length - 1])}` : `${dayShort(s.days[0])} ${monthOf(s.days[0])}`);
 
 /** Что в городе: компании, культура, отель, погода, как уезжаем. */
 export function stopInfo(s: Stop) {

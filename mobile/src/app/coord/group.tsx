@@ -31,8 +31,8 @@ function People() {
   return (
     <>
       <Card>
-        <TitleRow title="Профили участников" right={<Text style={{ fontFamily: F.display, fontSize: 26, color: C.ink }}>{`${done}/18`}</Text>} />
-        <Bar value={done / 18} />
+        <TitleRow title="Профили участников" right={<Text style={{ fontFamily: F.display, fontSize: 26, color: C.ink }}>{`${done}/${DELEGATES.length}`}</Text>} />
+        <Bar value={done / DELEGATES.length} />
         <T muted>{`Проверены ${n('checked')} · ждут проверки ${n('ready')} · заполняют ${n('filling')} · не открыли приглашение ${n('invited')}. Срок — за 14 дней до вылета (26.10).`}</T>
       </Card>
       <Chips>{filters.map(([key, l, c]) => <Pick key={key} title={`${l} · ${c}`} on={f === key} onPress={() => setF(key)} />)}</Chips>
@@ -104,7 +104,7 @@ function Food() {
         }) : <T muted>Нет.</T>}
       </Card>
       <Card>
-        <TitleRow title="Питание группы" right={<Chip tone={g.filled === 18 ? 'ok' : 'warn'}>{`профили ${g.filled}/18`}</Chip>} />
+        <TitleRow title="Питание группы" right={<Chip tone={g.filled === DELEGATES.length ? 'ok' : 'warn'}>{`профили ${g.filled}/${DELEGATES.length}`}</Chip>} />
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
           {Object.entries(g.dc).map(([key, c]) => <Chip key={key} tone="info">{`${DIET_BY[key][1]} · ${c}`}</Chip>)}
         </View>
@@ -152,7 +152,7 @@ function Rooms() {
 export default function Group() {
   const [tab, setTab] = useState<'people' | 'food' | 'rooms'>('people');
   return (
-    <CoordScreen title="Группа · 18">
+    <CoordScreen title={`Группа · ${DELEGATES.length}`}>
       <Seg options={[['people', 'Люди'], ['food', 'Питание'], ['rooms', 'Расселение']] as const} value={tab} onChange={setTab} />
       {tab === 'food' ? <Food /> : tab === 'rooms' ? <Rooms /> : <People />}
     </CoordScreen>

@@ -18,6 +18,9 @@ export const TRIP = {
 };
 /** Погода одной строкой; у программ с сайта прогноза в демо нет. */
 export const weatherLine = (w: Weather) => (w.max ? `${w.max} / ${w.min}` : 'Прогноз позже');
+const MONTHS_GEN = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+/** Месяц дня поездки в родительном падеже — от даты начала (у поездок организатора это не обязательно ноябрь). */
+export const monthOf = (i: number) => MONTHS_GEN[new Date(Date.parse(`${TRIP.start}T00:00:00Z`) + i * 86400000).getUTCMonth()] || 'ноября';
 
 export type EventKind = 'move' | 'co' | 'meal' | 'culture' | 'info';
 export type TripEvent = { t: string; name: string; place: string; kind: EventKind; moved?: boolean; ref?: string };

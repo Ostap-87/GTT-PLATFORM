@@ -10,8 +10,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { applyTrip } from '@/data/active';
-import { applyTenant, setCustomTenants, type Tenant } from '@/data/tenant';
+import { applyOrg, applyTrip } from '@/data/active';
+import { TENANT, applyTenant, setCustomTenants, type Tenant } from '@/data/tenant';
 import { AdminProvider } from '@/state/admin';
 import { AgentProvider } from '@/state/agent';
 import { DemoContext, ResetContext, TenantContext } from '@/state/reset';
@@ -23,6 +23,9 @@ import { ToastProvider } from '@/state/toast';
 import { NotificationBridge } from '@/ui/NotificationBridge';
 import { C, F } from '@/ui/theme';
 
+/** Содержимое поездки: у GTT — программы сайта, у других организаторов — их кабинет (data/org.ts), не программы GTT. */
+const applyContent = () => (TENANT.id === 'gtt' ? applyTrip(peekStored<string>('demo.program')) : applyOrg(TENANT));
+
 export default function RootLayout() {
   const [loaded] = useFonts({ Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold, SofiaSansExtraCondensed_800ExtraBold });
   // Сохранённое на телефоне читается до первого экрана; «Начать демо заново» меняет gen — состояние собирается с нуля
@@ -30,9 +33,9 @@ export default function RootLayout() {
   const [gen, setGen] = useState(0);
   // какая программа открыта в демо делегата — тоже сохраняется; её данные подставляются до первого экрана
   // организатор (white label) — тоже до первого экрана: от него цвета и бренд
-  useEffect(() => { loadStore().finally(() => { setCustomTenants(peekStored<Tenant[]>('tenants.custom')); applyTenant(peekStored<string>('tenant.id')); applyTrip(peekStored<string>('demo.program')); setStored(true); }); }, []);
+  useEffect(() => { loadStore().finally(() => { setCustomTenants(peekStored<Tenant[]>('tenants.custom')); applyTenant(peekStored<string>('tenant.id')); applyContent(); setStored(true); }); }, []);
   const resetAll = useCallback(async () => { await clearStore(); setCustomTenants([]); applyTenant(null); applyTrip(null); setGen((g) => g + 1); }, []);
-  const switchTenant = useCallback((id: string) => { putStored('tenant.id', applyTenant(id)); setGen((g) => g + 1); }, []);
+  const switchTenant = useCallback((id: string) => { putStored('tenant.id', applyTenant(id)); applyContent(); setGen((g) => g + 1); }, []);
   const openDemo = useCallback((programId: string) => { putStored('demo.program', applyTrip(programId)); setGen((g) => g + 1); }, []);
   if (!loaded || !stored) return null;
   return (
@@ -104,6 +107,7 @@ export default function RootLayout() {
             <Stack.Screen name="chat" options={{ title: 'Чат с координатором' }} />
             <Stack.Screen name="join" options={{ title: 'Код приглашения' }} />
             <Stack.Screen name="builder" options={{ title: 'Конструктор организатора' }} />
+            <Stack.Screen name="org" options={{ title: 'Кабинет организатора' }} />
             <Stack.Screen name="country/[code]" options={{ title: 'Памятка по стране' }} />
             <Stack.Screen name="admin" options={{ headerShown: false }} />
             <Stack.Screen name="admin-trip/[id]" options={{ title: 'Поездка' }} />

@@ -17,10 +17,10 @@ export default function People() {
     <Screen eyebrow={`Группа · ${DELEGATES.length} делегатов и 2 организатора`} title="Люди">
       <Card tone="dark">
         <TitleRow title={<T bold style={{ color: '#fff' }}>Связь с координатором</T>} />
-        <T style={{ color: C.onDark }}>{`${TENANT.coordinator.name} · ${TENANT.demo ? 'на связи' : 'русский, китайский, английский'} · круглосуточно`}</T>
+        <T style={{ color: C.onDark }}>{`${TENANT.coordinator.name} · ${TENANT.id !== 'gtt' ? 'на связи' : 'русский, китайский, английский'} · круглосуточно`}</T>
         <Button title="Все контакты и экстренные номера" onPress={() => router.push('/contacts')} />
       </Card>
-      <Card>
+      {INTROS.length ? <Card>
         <TitleRow title="Вам стоит познакомиться" />
         {INTROS.map(({ id, why }) => {
           const d = byId[id];
@@ -35,11 +35,11 @@ export default function People() {
             />
           );
         })}
-      </Card>
+      </Card> : null}
       <Card>
         <TitleRow title="Делегаты" right={<T muted>{DELEGATES.length}</T>} />
         {DELEGATES.map((d) => (
-          <Row key={d.id} left={<Avatar text={initials(d.lat)} />} title={d.id === ME.id ? `${d.ru} (вы)` : d.ru} sub={`${d.roleRu} · ${d.coRu} · ${d.cityRu}`} />
+          <Row key={d.id} left={<Avatar text={initials(d.lat)} />} title={d.id === ME.id ? `${d.ru} (вы)` : d.ru} sub={[d.roleRu, d.coRu, d.cityRu].filter(Boolean).join(' · ')} />
         ))}
         <T muted>Телефоны в списке не показываем: контактами обмениваются по согласию.</T>
       </Card>

@@ -72,15 +72,15 @@ export default function Center() {
   return (
     <CoordScreen title={`${TRIP.programId ? TRIP.title : 'Новый ритейл'} · день ${TRIP.today + 1}`}>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
-        <Stat dark label="В автобусе" value={`${k.busCount} / 18`} sub={dep ? `выехали в ${dep}` : 'выезд в 09:30'} />
+        <Stat dark label="В автобусе" value={`${k.busCount} / ${DELEGATES.length}`} sub={dep ? `выехали в ${dep}` : 'выезд в 09:30'} />
         <Stat label="Визиты подтверждены" value={`${conf} / ${VISITS.length}`} sub={VISITS.filter((v) => v.st[0] !== 'ok' && !(v.id === 'hema' && k.hema === 'accepted')).map((v) => v.name.split(' ')[0]).join(', ')} />
-        <Stat label="Профили готовы" value={`${ready} / 18`} sub={k.notReady.length ? `${k.notReady.length} ждём` : 'все заполнены'} />
-        <Stat label="Документы" value={`${18 - k.docsMissing.length} / 18`} sub={`${k.docsMissing.length} ждём`} />
+        <Stat label="Профили готовы" value={`${ready} / ${DELEGATES.length}`} sub={k.notReady.length ? `${k.notReady.length} ждём` : 'все заполнены'} />
+        <Stat label="Документы" value={`${DELEGATES.length - k.docsMissing.length} / ${DELEGATES.length}`} sub={`${k.docsMissing.length} ждём`} />
       </View>
 
       <Card>
-        <TitleRow title="Сбор группы · автобус №2" right={<Chip tone={k.missing.length ? 'warn' : 'ok'}>{`${k.busCount}/18`}</Chip>} />
-        <Bar value={k.busCount / 18} />
+        <TitleRow title="Сбор группы · автобус №2" right={<Chip tone={k.missing.length ? 'warn' : 'ok'}>{`${k.busCount}/${DELEGATES.length}`}</Chip>} />
+        <Bar value={k.busCount / DELEGATES.length} />
         {k.missing.length ? k.missing.map((id) => (
           <Row
             key={id}
@@ -106,7 +106,7 @@ export default function Center() {
         <TitleRow title="Радиогид для группы" right={k.guideLive ? <Chip tone="new">в эфире</Chip> : null} />
         {k.guideLive ? (
           <>
-            <T muted>Говорит Ли Мэй · слушают 11 из 18</T>
+            <T muted>Говорит Ли Мэй · {`слушают ${Math.min(11, DELEGATES.length)} из ${DELEGATES.length}`}</T>
             <Button title="Остановить трансляцию" kind="ghost" onPress={() => { k.setGuideLive(false); toast('Трансляция остановлена'); }} />
           </>
         ) : (

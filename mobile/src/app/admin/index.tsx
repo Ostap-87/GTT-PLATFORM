@@ -18,8 +18,8 @@ export default function AdminTrips() {
       <Card onPress={() => router.push('/join')} label={`Организатор: ${TENANT.name}. Сменить`}>
         <Row first left={<Monogram t={TENANT} size={40} />} title={`Организатор: ${TENANT.name}`}
           sub={`Код приглашения ${TENANT.code} · данные участников хранятся: ${REGION_RU[TENANT.region]}`} right={<Chip tone="info">сменить</Chip>} />
-        <Button title={TENANT.custom ? 'Изменить бренд и блоки' : 'Конструктор: свой организатор'} kind="light" icon="grid"
-          onPress={() => router.push(TENANT.custom ? `/builder?id=${TENANT.id}` : '/builder')} />
+        <Button title={TENANT.custom ? 'Кабинет организатора' : 'Кабинет: новый организатор'} kind="light" icon="grid"
+          onPress={() => router.push(TENANT.custom ? `/org?id=${TENANT.id}` : '/org?new=1')} />
       </Card>
       <Card tone="info">
         <T>{a.level === 'full'

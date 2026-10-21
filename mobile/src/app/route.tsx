@@ -9,7 +9,7 @@ import { plural } from '@/data/group';
 import { LEGS, MAP_LEGS, MAP_STOPS, ROUTE_STATS, STOPS, dayShort, pointOf, routeText, stopDays, stopInfo } from '@/data/route';
 import { Icon } from '@/ui/Icon';
 import { Button, Card, Chip, H3, Plain, Row, T, TitleRow } from '@/ui/kit';
-import { TRIP, weatherLine } from '@/data/trip';
+import { TRIP, monthOf, weatherLine } from '@/data/trip';
 import { RouteMap } from '@/ui/RouteMap';
 import { C, F } from '@/ui/theme';
 
@@ -108,7 +108,7 @@ export default function RouteScreen() {
         <H3>Все переезды</H3>
         {LEGS.map((l, i) => (
           <Row key={i} left={<Icon name={l.how} size={22} color={i < shown ? C.blueInk : C.muted} />}
-            title={`${pointOf(l.from).ru} → ${pointOf(l.to).ru}`} sub={`${dayShort(l.day)} ноября · ${l.time} · ${howRu(l.how)}`}
+            title={`${pointOf(l.from).ru} → ${pointOf(l.to).ru}`} sub={`${dayShort(l.day)} ${monthOf(l.day)} · ${l.time} · ${howRu(l.how)}`}
             onPress={l.to !== 'moscow' ? () => pick(l.to) : undefined} />
         ))}
       </Card>

@@ -5,6 +5,9 @@
 из блоков, плитки и вкладки — и раздаёт код приглашения. Подробности и правила — [`CLAUDE.md`](CLAUDE.md),
 рынки и модель — [`docs/market-research.md`](docs/market-research.md).
 
+**В браузере** (компьютер, планшет, телефон): https://ostap-87.github.io/GTT-PLATFORM/ · кабинет организатора —
+https://ostap-87.github.io/GTT-PLATFORM/org. Путь клиента — [`docs/client-journey.md`](docs/client-journey.md).
+
 Обновления общего приложения приходят из GTT-APP: `git fetch https://github.com/Ostap-87/GTT-APP.git main && git merge FETCH_HEAD`.
 
 ---

@@ -108,12 +108,14 @@ function useCoordState() {
     const historyOf = (id: string): [string, string][] => (id === 'd1' ? trip.pHist : BASE_HISTORY[id] || [['27.10', 'Остап: проверено'], ['25.10', `${firstName(id)}: ${fem(id) ? 'заполнила' : 'заполнил'} профиль`]]);
     const notReady = DELEGATES.filter((d) => !ready(d.id));
     // Анна сама нажимает «Я в автобусе» у себя — координатор видит это сразу.
-    const away = missing.filter((x) => x !== 'd1' || !trip.inBus);
+    // в поездке организатора группа своего размера — отметки только тех, кто в ней есть
+    const inGroup = new Set(DELEGATES.map((d) => d.id));
+    const away = missing.filter((x) => inGroup.has(x) && (x !== 'd1' || !trip.inBus));
 
     return {
       profileOf, pStage, ready, severeOf, attnOf, food, foodDirty, foodChanges, rooming, historyOf, notReady,
-      missing: away, legs, reminded, notes, foodSent, anns, igorReminded, pddReminded, docsMissing, viewing,
-      busCount: 18 - away.length,
+      missing: away, legs, reminded, notes, foodSent, anns, igorReminded, pddReminded, docsMissing: docsMissing.filter((x) => inGroup.has(x)), viewing,
+      busCount: DELEGATES.length - away.length,
       markBus: (id: string) => { if (id === 'd1') trip.setInBus(true); setMissing((m) => m.filter((x) => x !== id)); },
       /** Отметка переезда; возвращает текст ошибки, если время не подходит. */
       markLeg: (id: string, kind: 'dep' | 'arr', t: string) => {

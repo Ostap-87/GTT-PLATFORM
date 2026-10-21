@@ -8,10 +8,11 @@ import { AccessibilityInfo, Animated, Platform, Pressable, StyleSheet, Text, Vie
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import catalog from '@/data/catalog.json';
+import { addSample, liveTrip, orgOf, saveOrg } from '@/data/org';
 import { TENANT } from '@/data/tenant';
 import { TRIP } from '@/data/trip';
 import { GLOBE_Y, LETTER_H, LETTER_Y, unitPx, type SplashConfig, type SplashEvent } from '@/splash/config';
-import { useResetAll } from '@/state/reset';
+import { useResetAll, useSwitchTenant } from '@/state/reset';
 import { useToast } from '@/state/toast';
 import { Button } from '@/ui/kit';
 import { Monogram } from '@/ui/Monogram';
@@ -119,6 +120,7 @@ function TenantWelcome() {
 /** Входы в роли — общие для стартового экрана GTT и организаторов. */
 function Entry({ bottom }: { bottom: number }) {
   const resetAll = useResetAll();
+  const switchTenant = useSwitchTenant();
   const toast = useToast();
   const [armed, setArmed] = useState(false);
   // сброс демо — двойным нажатием: первое предупреждает, второе (в течение 4 с) стирает сохранённое
@@ -127,6 +129,39 @@ function Entry({ bottom }: { bottom: number }) {
     setArmed(false);
     resetAll().then(() => toast('Демо начато заново — сохранённое стёрто'));
   };
+  const links = (
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', columnGap: 22, rowGap: 6 }}>
+      <Pressable onPress={() => router.push('/join')} accessibilityRole="button" accessibilityLabel="Ввести код приглашения от организатора" hitSlop={8}>
+        <Text style={[st.note, { color: C.blue, fontFamily: F.semibold }]}>{`Код приглашения · ${TENANT.short}`}</Text>
+      </Pressable>
+      <Pressable onPress={() => router.push(TENANT.custom ? `/org?id=${TENANT.id}` : '/org')} accessibilityRole="button" hitSlop={8}>
+        <Text style={[st.note, { color: C.blue, fontFamily: F.semibold }]}>Кабинет организатора</Text>
+      </Pressable>
+      <Pressable onPress={reset} accessibilityRole="button" accessibilityLabel="Начать демо заново" hitSlop={8}>
+        <Text style={[st.note, { color: armed ? C.warn : C.blue, fontFamily: F.semibold }]}>{armed ? 'Нажмите ещё раз — всё сотрётся' : 'Начать демо заново'}</Text>
+      </Pressable>
+    </View>
+  );
+  // у других организаторов — их поездка или кабинет; программ и поездок GTT у них нет (решение 21.10.2026)
+  if (TENANT.id !== 'gtt') {
+    const org = orgOf(TENANT.id);
+    const live = liveTrip(org);
+    const sample = () => { saveOrg(TENANT.id, addSample(org)); switchTenant(TENANT.id); setTimeout(() => router.replace('/trip'), 60); };
+    return (
+      <View style={[st.bottom, { paddingBottom: bottom + 16 }]}>
+        {live ? <Button title="Войти в поездку" onPress={() => router.replace('/trip')} label={`Войти в поездку: ${TRIP.title}`} />
+          : TENANT.custom ? <Button title="Кабинет организатора" icon="grid" onPress={() => router.push(`/org?id=${TENANT.id}`)} />
+            : <Button title="Войти в пример поездки" onPress={() => router.replace('/trip')} />}
+        {live && TENANT.custom ? <Button title="Кабинет организатора" kind="light" icon="grid" onPress={() => router.push(`/org?id=${TENANT.id}`)} /> : null}
+        {!live && TENANT.custom ? <Button title="Пример поездки" kind="light" icon="star" onPress={sample} /> : null}
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          <View style={{ flex: 1 }}><Button title="Координатор" kind="light" icon="grid" label="Войти как координатор" onPress={() => router.replace('/coord')} /></View>
+        </View>
+        <Text style={st.note}>{live ? `Открыто: ${TRIP.title}, ${TRIP.dates}.` : TENANT.custom ? 'Поездок пока нет — создайте первую в кабинете организатора или откройте пример.' : 'Пример поездки — компании и участники вымышленные.'}</Text>
+        {links}
+      </View>
+    );
+  }
   return (
       <View style={[st.bottom, { paddingBottom: bottom + 16 }]}>
         <Button title="Войти в поездку" onPress={() => router.replace('/trip')} label={`Войти в поездку: ${TRIP.title}, демо`} />
@@ -140,14 +175,7 @@ function Entry({ bottom }: { bottom: number }) {
           <View style={{ flex: 1 }}><Button title={`Программы · ${catalog.length}`} kind="ghost" icon="globe" label={`Программы ${TENANT.short} · ${catalog.length}`} onPress={() => router.push('/catalog')} /></View>
         </View>
         <Text style={st.note}>{`Открыто: ${TRIP.title}, ${TRIP.dates}. Участники вымышленные. Всё, что вы отметите, сохраняется на телефоне.`}</Text>
-        <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 22 }}>
-          <Pressable onPress={() => router.push('/join')} accessibilityRole="button" accessibilityLabel="Ввести код приглашения от организатора" hitSlop={8}>
-            <Text style={[st.note, { color: C.blue, fontFamily: F.semibold }]}>{`Код приглашения · ${TENANT.short}`}</Text>
-          </Pressable>
-          <Pressable onPress={reset} accessibilityRole="button" accessibilityLabel="Начать демо заново" hitSlop={8}>
-            <Text style={[st.note, { color: armed ? C.warn : C.blue, fontFamily: F.semibold }]}>{armed ? 'Нажмите ещё раз — всё сотрётся' : 'Начать демо заново'}</Text>
-          </Pressable>
-        </View>
+        {links}
       </View>
   );
 }

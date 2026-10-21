@@ -1,0 +1,91 @@
+name: Веб-версия — GitHub Pages
+
+# Кабинет организатора и приложение участника в браузере (компьютер, планшет, телефон):
+# https://ostap-87.github.io/GTT-PLATFORM/ — кабинет: /GTT-PLATFORM/org
+# Включить один раз: Settings → Pages → Build and deployment → Source: GitHub Actions. Пока не включено, прогон
+# собирает сайт и подсказывает в сводке, что сделать, — без красного статуса.
+on:
+  push:
+    branches: [main]
+    paths: ['mobile/**', '.github/workflows/pages.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      enabled: ${{ steps.pages.outputs.enabled }}
+    steps:
+      - name: Включены ли GitHub Pages
+        id: pages
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh api "repos/${{ github.repository }}/pages" >/dev/null 2>&1; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            {
+              echo "### GitHub Pages не включены"
+              echo "Settings → Pages → Build and deployment → Source: **GitHub Actions**, затем Actions → «Веб-версия — GitHub Pages» → Run workflow."
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Зависимости
+        working-directory: mobile
+        run: npm ci
+
+      - name: Сборка под адрес /GTT-PLATFORM
+        working-directory: mobile
+        run: |
+          node -e "
+            const fs = require('fs');
+            const a = JSON.parse(fs.readFileSync('app.json', 'utf8'));
+            a.expo.experiments = { ...(a.expo.experiments || {}), baseUrl: '/GTT-PLATFORM' };
+            fs.writeFileSync('app.json', JSON.stringify(a, null, 2) + '\n');
+          "
+          npx expo export --platform web
+          # любая ссылка (/org, /join?code=…) открывает приложение, дальше путь разбирает роутер
+          cp dist/index.html dist/404.html
+          touch dist/.nojekyll
+
+      - uses: actions/upload-pages-artifact@v3
+        if: steps.pages.outputs.enabled == 'true'
+        with:
+          path: mobile/dist
+
+  deploy:
+    needs: build
+    if: needs.build.outputs.enabled == 'true'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4
+
+      - name: Ссылки
+        run: |
+          {
+            echo "### Веб-версия опубликована"
+            echo "- Кабинет организатора: ${{ steps.deploy.outputs.page_url }}org"
+            echo "- Приложение участника: ${{ steps.deploy.outputs.page_url }}"
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -3,7 +3,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
-import { CITY, DAYS, DAY_NOTES, TRIP, WEATHER, dayEvents, hotelOf, weatherLine } from '@/data/trip';
+import { CITY, DAYS, DAY_NOTES, TRIP, WEATHER, dayEvents, hotelOf, monthOf, weatherLine } from '@/data/trip';
 import { Icon } from '@/ui/Icon';
 import { Card, Chip, Row, Screen, Section, T, TitleRow } from '@/ui/kit';
 import { selectFeel } from '@/ui/haptics';
@@ -34,7 +34,7 @@ export default function Plan() {
         })}
       </ScrollView>
       <Card>
-        <TitleRow title={`${d.wd}, ${d.n} ноября · ${CITY[day]}`} right={day === TRIP.today ? <Chip tone="warn">сегодня</Chip> : null} />
+        <TitleRow title={`${d.wd}, ${d.n} ${monthOf(day)} · ${CITY[day]}`} right={day === TRIP.today ? <Chip tone="warn">сегодня</Chip> : null} />
         <Row left={<Icon name={w.icon} size={26} />} title={weatherLine(w)} sub={w.text} />
         {h ? (
           <Row left={<Icon name="bed" size={26} />} title={h.name} sub={`${h.nights} · ${h.addrZh ? "адрес на 3 языках" : "адрес пришлёт координатор"}`} right={<Chip>отель</Chip>} onPress={() => router.push(`/hotel/${h.key}`)} label={`Отель: ${h.name}`} />

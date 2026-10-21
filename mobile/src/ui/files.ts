@@ -10,6 +10,7 @@ export const MIME = {
   ics: ['text/calendar', 'com.apple.ical.ics'],
   vcf: ['text/vcard', 'public.vcard'],
   pdf: ['application/pdf', 'com.adobe.pdf'],
+  svg: ['image/svg+xml', 'public.svg-image'],
 } as const;
 
 export async function shareFile(name: string, data: string | Uint8Array, kind: keyof typeof MIME, title?: string): Promise<boolean> {

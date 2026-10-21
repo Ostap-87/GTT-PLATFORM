@@ -51,15 +51,15 @@ export default function Join() {
             <Row first={i === 0} left={<Monogram t={t} />} title={t.name}
               sub={`код ${t.code} · данные хранятся: ${REGION_RU[t.region]}${t.demo ? ' · пример бренда' : t.custom ? ' · из конструктора' : ''}`}
               right={t.custom
-                ? <Button title="Изменить" kind="light" small label={`Изменить организатора ${t.name}`} onPress={() => router.push(`/builder?id=${t.id}`)} />
+                ? <Button title="Изменить" kind="light" small label={`Изменить организатора ${t.name}`} onPress={() => router.push(`/org?id=${t.id}&step=brand`)} />
                 : TENANT.id === t.id ? <Chip tone="ok">открыто</Chip> : undefined} />
           </Press>
         ))}
       </Card>
       <Card tone="info">
         <H3>Свой организатор</H3>
-        <T>Название, логотип, цвет, координатор и какие блоки видят участники — собирается за пару минут, код приглашения появится сразу.</T>
-        <Button title="Открыть конструктор" icon="plus" onPress={() => router.push('/builder')} />
+        <T>Компания и бренд, программы из Excel, Word, PDF или вручную, поездка, участники и приглашение с QR-кодом — в кабинете организатора: с компьютера, планшета или телефона.</T>
+        <Button title="Открыть кабинет организатора" icon="plus" onPress={() => router.push('/org?new=1')} />
       </Card>
       <View style={{ paddingHorizontal: 4 }}>
         <T muted>Одно приложение для всех организаторов: у каждого свой бренд, а данные участников хранятся там, где требует закон страны организатора.</T>

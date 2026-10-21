@@ -9,7 +9,7 @@ import { countryOf } from '@/data/countries';
 import { VISITS, plural } from '@/data/group';
 import { VISIT_DAY } from '@/data/mindmap';
 import { MAP_LEGS, MAP_STOPS, ROUTE_STATS, routeText } from '@/data/route';
-import { CHECKLIST, CITY, CULTURE, DAYS, ME, TRIP } from '@/data/trip';
+import { CHECKLIST, CITY, CULTURE, DAYS, ME, TRIP, monthOf } from '@/data/trip';
 import { useCoord } from '@/state/coord';
 import { useToast } from '@/state/toast';
 import { useTrip } from '@/state/trip';
@@ -155,7 +155,7 @@ function After() {
       </Card>
       <Card>
         <H3>Фото, видео и отчёт</H3>
-        <T muted>{`Откроются ${DAYS[DAYS.length - 1].n} ноября, после возвращения группы.`}</T>
+        <T muted>{`Откроются ${DAYS[DAYS.length - 1].n} ${monthOf(DAYS.length - 1)}, после возвращения группы.`}</T>
       </Card>
     </>
   );
