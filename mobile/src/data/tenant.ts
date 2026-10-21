@@ -109,7 +109,14 @@ export const PALETTE = ['#1a73e8', '#0f8a6c', '#7048e8', '#c2255c', '#e8590c', '
 export function suggestCode(name: string) {
   const map: Record<string, string> = { а: 'a', б: 'b', в: 'v', г: 'g', д: 'd', е: 'e', ё: 'e', ж: 'zh', з: 'z', и: 'i', й: 'y', к: 'k', л: 'l', м: 'm', н: 'n', о: 'o', п: 'p', р: 'r', с: 's', т: 't', у: 'u', ф: 'f', х: 'h', ц: 'c', ч: 'ch', ш: 'sh', щ: 'sch', ы: 'y', э: 'e', ю: 'yu', я: 'ya' };
   const lat = name.toLowerCase().split('').map((ch) => map[ch] ?? ch).join('').replace(/[^a-z0-9]/g, '').toUpperCase();
-  return (lat || 'TRIP').slice(0, 8);
+  return (lat.length >= 3 ? lat : `${lat}TRIP`).slice(0, 8);
+}
+/** Свободный код из названия: «AZIYABIZ», занят — «AZIYABI2»… */
+export function uniqueCode(name: string, selfId = '') {
+  const base = suggestCode(name);
+  let code = base;
+  for (let i = 2; allTenants().some((x) => x.id !== selfId && x.code === code); i++) code = `${base.slice(0, 7)}${i}`;
+  return code;
 }
 /** Новый организатор с настройками по умолчанию — заготовка конструктора. */
 export function blankTenant(): Tenant {

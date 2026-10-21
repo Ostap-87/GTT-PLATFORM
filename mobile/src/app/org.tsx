@@ -4,12 +4,12 @@
 // сверху, форма и телефон рядом; телефон — шаги сверху, предпросмотр по кнопке.
 // /org — список организаторов или новый; /org?id=…&step=… — кабинет; /org?new=1 — новый организатор.
 import { router, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Modal, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { liveTrip, orgOf, previewTrip, saveOrg, type Org } from '@/data/org';
-import { allTenants, blankTenant, setCustomTenants, suggestCode, type Tenant } from '@/data/tenant';
+import { allTenants, blankTenant, setCustomTenants, uniqueCode, type Tenant } from '@/data/tenant';
 import { useSwitchTenant } from '@/state/reset';
 import { peekStored, putStored } from '@/state/store';
 import { useToast } from '@/state/toast';
@@ -24,6 +24,7 @@ import { PhonePreview } from '@/ui/org-ui';
 import { C, F, SH } from '@/ui/theme';
 
 type Step = 'company' | 'brand' | 'programs' | 'trip' | 'people' | 'invite';
+const NEW_NAME = 'Новый организатор';
 const STEPS: [Step, string, IconName, string][] = [
   ['company', 'Компания', 'building', 'Название, контакты и где хранить данные участников.'],
   ['brand', 'Бренд', 'star', 'Логотип, цвет, координатор и что участник видит на экране «Сегодня».'],
@@ -53,7 +54,10 @@ function OrgPicker({ list }: { list: Tenant[] }) {
           </Card>
         );
       })}
-      <Button title="Новый организатор" icon="plus" onPress={() => router.setParams({ new: '1' })} />
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+        <Button title="Новый организатор" icon="plus" onPress={() => router.setParams({ new: '1' })} />
+        <Button title="Сразу загрузить программу" icon="grid" kind="light" onPress={() => router.setParams({ new: '1', step: 'programs' })} />
+      </View>
     </ScrollView>
   );
 }
@@ -80,20 +84,26 @@ function Cabinet({ id, step0 }: { id?: string; step0?: Step }) {
   };
   const patch = (p: Partial<Tenant>) => setT((x) => { const n = { ...x, ...p }; if (saved) persistTenant(n); return n; });
   const upd = (fn: (o: Org) => Org) => setOrg((o) => { const n = fn(o); if (saved) saveOrg(t.id, n); return n; });
-  const setStep = (s: Step) => { setStepState(s); setPreviewProgram(''); if (saved) router.setParams({ step: s }); };
+  // любой шаг открыт сразу: без названия кабинет создаётся сам («Новый организатор», переименовать — на шаге «Компания»),
+  // чтобы можно было начать с загрузки программы (решение пользователя 21.10.2026)
+  const setStep = (s: Step) => {
+    if (!saved && s !== 'company') { create(s, true); return; }
+    setStepState(s); setPreviewProgram(''); if (saved) router.setParams({ step: s });
+  };
 
-  const create = () => {
-    const name = t.name.trim();
+  const create = (next: Step = 'brand', quiet = false) => {
+    const name = t.name.trim() || (quiet ? NEW_NAME : '');
     if (!name) { toast('Впишите название компании'); return; }
-    let code = suggestCode(name);
-    for (let i = 2; allTenants().some((x) => x.code === code); i++) code = `${suggestCode(name).slice(0, 7)}${i}`;
+    const code = uniqueCode(name, t.id);
     const n: Tenant = { ...t, name, short: t.short || initialsOf(name, 3), code };
     persistTenant(n);
     saveOrg(n.id, org);
     setSaved(true);
-    toast(`Кабинет создан · код приглашения ${code}`);
-    router.setParams({ id: n.id, step: 'brand', new: '' });
+    toast(name === NEW_NAME ? 'Кабинет создан — название компании впишете, когда будет удобно' : `Кабинет создан · код приглашения ${code}`);
+    router.setParams({ id: n.id, step: next, new: '' });
   };
+  // /org?new=1&step=programs — сразу к загрузке программы
+  useEffect(() => { if (!saved && step0 && step0 !== 'company') create(step0, true); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const openAsDelegate = () => {
     // поездка, которую открываем, — опубликованная; если ни одна не открыта, открываем выбранную
     const trip = org.trips.find((x) => x.id === sel) || liveTrip(org) || org.trips[0];
@@ -104,18 +114,18 @@ function Cabinet({ id, step0 }: { id?: string; step0?: Step }) {
   const i = STEPS.findIndex(([k]) => k === step);
   const [, title, , sub] = STEPS[i];
   const done: Record<Step, boolean> = {
-    company: saved, brand: saved && !!t.coordinator.name, programs: org.programs.length > 0, trip: org.trips.length > 0,
+    company: saved && t.name !== NEW_NAME, brand: saved && !!t.coordinator.name, programs: org.programs.length > 0, trip: org.trips.length > 0,
     people: org.trips.some((x) => x.people.length > 0), invite: org.trips.some((x) => x.people.some((p) => p.invite !== 'new')),
   };
-  const locked = (k: Step) => !saved && k !== 'company';
+  const locked = (_k: Step) => false;
   const preview = previewTrip(org, step === 'trip' || step === 'people' || step === 'invite' ? sel : undefined, previewProgram || undefined);
 
   const wide = width >= 1100;
   const side = width >= 860;
   const phoneW = wide ? 300 : 270;
 
-  const content = locked(step) ? <Card tone="info"><T>Сначала заполните шаг «Компания» — так появится ваш кабинет.</T></Card> : (
-    step === 'company' ? <CompanyStep t={t} patch={patch} org={org} upd={upd} saved={saved} onCreate={create} />
+  const content = (
+    step === 'company' ? <CompanyStep t={t} patch={patch} org={org} upd={upd} saved={saved} onCreate={() => create()} onPrograms={() => setStep('programs')} />
       : step === 'brand' ? <BrandForm t={t} patch={patch} hex={hex} setHex={setHex} />
         : step === 'programs' ? <ProgramsStep org={org} upd={upd} onPreview={setPreviewProgram} goTrip={() => setStep('trip')} />
           : step === 'trip' ? <TripStep org={org} upd={upd} sel={sel} setSel={setSel} goPrograms={() => setStep('programs')} />
@@ -153,6 +163,7 @@ function Cabinet({ id, step0 }: { id?: string; step0?: Step }) {
             </View>
           </View>
           {stepList}
+          {step !== 'programs' ? <Button title="Загрузить программу" icon="plus" kind="light" small onPress={() => setStep('programs')} /> : null}
           <View style={{ flex: 1 }} />
           {saved ? <Button title="Открыть как участник" icon="people" kind="light" small onPress={openAsDelegate} /> : null}
           <Pressable onPress={() => router.replace('/org')} accessibilityRole="button" hitSlop={6}><Text style={{ fontFamily: F.semibold, fontSize: 13, color: C.blueInk }}>Все организаторы</Text></Pressable>

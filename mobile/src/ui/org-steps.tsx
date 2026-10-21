@@ -13,11 +13,12 @@ import {
 } from '@/data/org';
 import { plural } from '@/data/group';
 import { qrSvg } from '@/data/qr';
-import { REGION_RU, allTenants, type DataRegion, type Tenant } from '@/data/tenant';
+import { REGION_RU, allTenants, uniqueCode, type DataRegion, type Tenant } from '@/data/tenant';
 import { useToast } from '@/state/toast';
 import { shareFile } from './files';
 import { Icon } from './Icon';
 import { Button, Card, Check, Chip, Chips, Field, H3, Label, Pick, Section, T, TitleRow, inputStyle } from './kit';
+import { initialsOf } from './brand-form';
 import { ActionTile } from './org-ui';
 import { C, F, SH } from './theme';
 
@@ -25,14 +26,20 @@ type Upd = (fn: (o: Org) => Org) => void;
 const REGIONS = Object.entries(REGION_RU) as [DataRegion, string][];
 
 // ——— 1. Компания ———
-export function CompanyStep({ t, patch, org, upd, saved, onCreate }: { t: Tenant; patch: (p: Partial<Tenant>) => void; org: Org; upd: Upd; saved: boolean; onCreate: () => void }) {
+export function CompanyStep({ t, patch, org, upd, saved, onCreate, onPrograms }: { t: Tenant; patch: (p: Partial<Tenant>) => void; org: Org; upd: Upd; saved: boolean; onCreate: () => void; onPrograms: () => void }) {
   const c = org.contact;
   const setC = (p: Partial<Org['contact']>) => upd((o) => ({ ...o, contact: { ...o.contact, ...p } }));
   return (
     <>
+      {!org.programs.length ? (
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
+          <ActionTile icon="grid" title="Начать с программы" sub="Есть программа в Excel, Word или PDF? Загрузите её сразу — компанию и бренд заполните потом" onPress={onPrograms} />
+        </View>
+      ) : null}
       <Card>
         <H3>Организация</H3>
-        <Field label="Название компании *" value={t.name} onChangeText={(name) => patch({ name })} placeholder="Например, Деловые поездки в Азию" />
+        {/* пока код и монограмма — из названия (никто не правил их руками), они меняются вместе с названием */}
+        <Field label="Название компании *" value={t.name} onChangeText={(name) => patch({ name, ...(saved && name.trim() && t.code === uniqueCode(t.name, t.id) ? { code: uniqueCode(name, t.id) } : {}), ...(t.short === initialsOf(t.name, 3) ? { short: initialsOf(name, 3) } : {}) })} placeholder="Например, Деловые поездки в Азию" />
         <Field label="Слоган под названием" value={t.tagline} onChangeText={(tagline) => patch({ tagline })} placeholder="Чем вы занимаетесь" />
       </Card>
       <Card>
