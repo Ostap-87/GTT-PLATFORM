@@ -22,16 +22,17 @@ import { Press } from '@/ui/motion';
 import { CompanyStep, InviteStep, PeopleStep, ProgramsStep, TripStep } from '@/ui/org-steps';
 import { PhonePreview } from '@/ui/org-ui';
 import { C, F, SH } from '@/ui/theme';
+import { LANG, __ } from '@/i18n';
 
 type Step = 'company' | 'brand' | 'programs' | 'trip' | 'people' | 'invite';
-const NEW_NAME = 'Новый организатор';
+const NEW_NAME = __('Новый организатор');
 const STEPS: [Step, string, IconName, string][] = [
-  ['company', 'Компания', 'building', 'Название, контакты и где хранить данные участников.'],
-  ['brand', 'Бренд', 'star', 'Логотип, цвет, координатор и что участник видит на экране «Сегодня».'],
-  ['programs', 'Программы', 'route', 'Загрузите Excel, Word или PDF — или заполните вручную. Всё распознанное можно поправить.'],
-  ['trip', 'Поездка', 'cal', 'Программа + даты + отель. Откройте поездку участникам, когда она готова.'],
-  ['people', 'Участники', 'people', 'Список группы: по одному или из Excel.'],
-  ['invite', 'Приглашение', 'send', 'Код, ссылка и QR-код — участник открывает поездку под вашим брендом.'],
+  ['company', __('Компания'), 'building', __('Название, контакты и где хранить данные участников.')],
+  ['brand', __('Бренд'), 'star', __('Логотип, цвет, координатор и что участник видит на экране «Сегодня».')],
+  ['programs', __('Программы'), 'route', __('Загрузите Excel, Word или PDF — или заполните вручную. Всё распознанное можно поправить.')],
+  ['trip', __('Поездка'), 'cal', __('Программа + даты + отель. Откройте поездку участникам, когда она готова.')],
+  ['people', __('Участники'), 'people', __('Список группы: по одному или из Excel.')],
+  ['invite', __('Приглашение'), 'send', __('Код, ссылка и QR-код — участник открывает поездку под вашим брендом.')],
 ];
 
 export default function OrgCabinet() {
@@ -44,19 +45,19 @@ export default function OrgCabinet() {
 function OrgPicker({ list }: { list: Tenant[] }) {
   return (
     <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={{ padding: 20, gap: 14, maxWidth: 760, width: '100%', alignSelf: 'center' }}>
-      <Text style={{ fontFamily: F.display, fontSize: 40, color: C.ink, textTransform: 'uppercase' }}>Кабинет организатора</Text>
-      <T muted>Выберите организатора или создайте нового — у каждого свои программы, поездки, участники и бренд.</T>
+      <Text style={{ fontFamily: F.display, fontSize: 40, color: C.ink, textTransform: 'uppercase' }}>{__('Кабинет организатора')}</Text>
+      <T muted>{__('Выберите организатора или создайте нового — у каждого свои программы, поездки, участники и бренд.')}</T>
       {list.map((t) => {
         const o = orgOf(t.id);
         return (
-          <Card key={t.id} onPress={() => router.setParams({ id: t.id, step: 'programs' })} label={`Кабинет: ${t.name}`}>
-            <Row left={<Monogram t={t} size={46} />} title={t.name} sub={`код ${t.code} · программ ${o.programs.length} · поездок ${o.trips.length}`} right={<Icon name="route" size={18} color={C.muted} />} />
+          <Card key={t.id} onPress={() => router.setParams({ id: t.id, step: 'programs' })} label={__('Кабинет: {a}', { a: t.name })}>
+            <Row left={<Monogram t={t} size={46} />} title={t.name} sub={__('код {a} · программ {b} · поездок {c}', { a: t.code, b: o.programs.length, c: o.trips.length })} right={<Icon name="route" size={18} color={C.muted} />} />
           </Card>
         );
       })}
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
-        <Button title="Новый организатор" icon="plus" onPress={() => router.setParams({ new: '1' })} />
-        <Button title="Сразу загрузить программу" icon="grid" kind="light" onPress={() => router.setParams({ new: '1', step: 'programs' })} />
+        <Button title={__("Новый организатор")} icon="plus" onPress={() => router.setParams({ new: '1' })} />
+        <Button title={__("Сразу загрузить программу")} icon="grid" kind="light" onPress={() => router.setParams({ new: '1', step: 'programs' })} />
       </View>
     </ScrollView>
   );
@@ -93,13 +94,13 @@ function Cabinet({ id, step0 }: { id?: string; step0?: Step }) {
 
   const create = (next: Step = 'brand', quiet = false) => {
     const name = t.name.trim() || (quiet ? NEW_NAME : '');
-    if (!name) { toast('Впишите название компании'); return; }
+    if (!name) { toast(__('Впишите название компании')); return; }
     const code = uniqueCode(name, t.id);
     const n: Tenant = { ...t, name, short: t.short || initialsOf(name, 3), code };
     persistTenant(n);
     saveOrg(n.id, org);
     setSaved(true);
-    toast(name === NEW_NAME ? 'Кабинет создан — название компании впишете, когда будет удобно' : `Кабинет создан · код приглашения ${code}`);
+    toast(name === NEW_NAME ? __('Кабинет создан — название компании впишете, когда будет удобно') : __('Кабинет создан · код приглашения {a}', { a: code }));
     router.setParams({ id: n.id, step: next, new: '' });
   };
   // /org?new=1&step=programs — сразу к загрузке программы
@@ -138,7 +139,7 @@ function Cabinet({ id, step0 }: { id?: string; step0?: Step }) {
       {STEPS.map(([k, name, icon], n) => {
         const on = k === step;
         return (
-          <Press key={k} onPress={() => setStep(k)} label={`Шаг ${n + 1}: ${name}`} scaleTo={0.98} state={{ selected: on, disabled: locked(k) }}
+          <Press key={k} onPress={() => setStep(k)} label={__('Шаг {a}: {b}', { a: n + 1, b: name })} scaleTo={0.98} state={{ selected: on, disabled: locked(k) }}
             style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 14, backgroundColor: on ? C.card : 'transparent', boxShadow: on ? SH.small : undefined, opacity: locked(k) ? 0.45 : 1 }}>
             <View style={{ width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: done[k] ? C.blue : on ? C.blueSoft : C.well }}>
               {done[k] ? <Icon name="check" size={15} color="#fff" /> : <Text style={{ fontFamily: F.bold, fontSize: 12, color: on ? C.blueInk : C.muted }}>{n + 1}</Text>}
@@ -158,58 +159,63 @@ function Cabinet({ id, step0 }: { id?: string; step0?: Step }) {
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
             <Monogram t={t} size={42} />
             <View style={{ flex: 1, minWidth: 0 }}>
-              <Text numberOfLines={2} style={{ fontFamily: F.bold, fontSize: 14, color: C.ink }}>{t.name || 'Новый организатор'}</Text>
-              <Text style={{ fontFamily: F.regular, fontSize: 12, color: C.muted }}>{saved ? `код ${t.code}` : 'кабинет организатора'}</Text>
+              <Text numberOfLines={2} style={{ fontFamily: F.bold, fontSize: 14, color: C.ink }}>{t.name || __('Новый организатор')}</Text>
+              <Text style={{ fontFamily: F.regular, fontSize: 12, color: C.muted }}>{saved ? __('код {a}', { a: t.code }) : __('кабинет организатора')}</Text>
             </View>
           </View>
           {stepList}
-          {step !== 'programs' ? <Button title="Загрузить программу" icon="plus" kind="light" small onPress={() => setStep('programs')} /> : null}
+          {step !== 'programs' ? <Button title={__("Загрузить программу")} icon="plus" kind="light" small onPress={() => setStep('programs')} /> : null}
           <View style={{ flex: 1 }} />
-          {saved ? <Button title="Открыть как участник" icon="people" kind="light" small onPress={openAsDelegate} /> : null}
-          <Pressable onPress={() => router.replace('/org')} accessibilityRole="button" hitSlop={6}><Text style={{ fontFamily: F.semibold, fontSize: 13, color: C.blueInk }}>Все организаторы</Text></Pressable>
+          {saved ? <Button title={__("Открыть как участник")} icon="people" kind="light" small onPress={openAsDelegate} /> : null}
+          <Pressable onPress={() => router.push('/settings')} accessibilityRole="button" hitSlop={6}><Text style={{ fontFamily: F.semibold, fontSize: 13, color: C.blueInk }}>{`${__('Язык и тема')} · ${LANG.toUpperCase()}`}</Text></Pressable>
+          <Pressable onPress={() => router.replace('/org')} accessibilityRole="button" hitSlop={6}><Text style={{ fontFamily: F.semibold, fontSize: 13, color: C.blueInk }}>{__('Все организаторы')}</Text></Pressable>
         </View>
       ) : (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }} contentContainerStyle={{ gap: 8, paddingHorizontal: 12, paddingVertical: 10 }}>
           {STEPS.map(([k, name], n) => (
-            <Press key={k} onPress={() => setStep(k)} label={`Шаг ${n + 1}: ${name}`} state={{ selected: k === step, disabled: locked(k) }}
+            <Press key={k} onPress={() => setStep(k)} label={__('Шаг {a}: {b}', { a: n + 1, b: name })} state={{ selected: k === step, disabled: locked(k) }}
               style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, height: 38, borderRadius: 19, backgroundColor: k === step ? C.blue : C.card, boxShadow: k === step ? SH.blue : SH.small, opacity: locked(k) ? 0.45 : 1 }}>
               {done[k] && k !== step ? <Icon name="check" size={14} color={C.blueInk} /> : <Text style={{ fontFamily: F.bold, fontSize: 12.5, color: k === step ? '#fff' : C.muted }}>{n + 1}</Text>}
               <Text style={{ fontFamily: F.semibold, fontSize: 13, color: k === step ? '#fff' : C.ink }}>{name}</Text>
             </Press>
           ))}
+          <Press onPress={() => router.push('/settings')} label={__('Язык и тема')} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, height: 38, borderRadius: 19, backgroundColor: C.card, boxShadow: SH.small }}>
+            <Icon name="globe" size={15} color={C.blueInk} />
+            <Text style={{ fontFamily: F.semibold, fontSize: 13, color: C.ink }}>{LANG.toUpperCase()}</Text>
+          </Press>
         </ScrollView>
       )}
       <View style={{ flex: 1, flexDirection: 'row' }}>
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: wide ? 32 : 16, paddingTop: wide ? 26 : 8, paddingBottom: insets.bottom + 110, gap: 14, maxWidth: 860, width: '100%', alignSelf: 'center' }} keyboardShouldPersistTaps="handled">
           <View style={{ gap: 4 }}>
-            <Text style={{ fontFamily: F.bold, fontSize: 12, letterSpacing: 1.2, color: C.muted }}>{`ШАГ ${i + 1} ИЗ ${STEPS.length}`}</Text>
+            <Text style={{ fontFamily: F.bold, fontSize: 12, letterSpacing: 1.2, color: C.muted }}>{__('ШАГ {a} ИЗ {b}', { a: i + 1, b: STEPS.length })}</Text>
             <Text accessibilityRole="header" style={{ fontFamily: F.display, fontSize: wide ? 44 : 34, lineHeight: wide ? 48 : 38, color: C.ink, textTransform: 'uppercase' }}>{title}</Text>
             <T muted>{sub}</T>
           </View>
           {content}
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 8 }}>
             {i > 0 ? <Button title={`← ${STEPS[i - 1][1]}`} kind="ghost" onPress={() => setStep(STEPS[i - 1][0])} /> : null}
-            {i < STEPS.length - 1 && !locked(STEPS[i + 1][0]) ? <Button title={`Дальше: ${STEPS[i + 1][1]} →`} kind="light" onPress={() => setStep(STEPS[i + 1][0])} /> : null}
+            {i < STEPS.length - 1 && !locked(STEPS[i + 1][0]) ? <Button title={__('Дальше: {a} →', { a: STEPS[i + 1][1] })} kind="light" onPress={() => setStep(STEPS[i + 1][0])} /> : null}
           </View>
         </ScrollView>
         {side ? (
           <ScrollView style={{ width: phoneW + 50, flexGrow: 0, borderLeftWidth: 1, borderColor: C.line2 }} contentContainerStyle={{ alignItems: 'center', paddingVertical: 20, gap: 10 }}>
-            <Text style={{ fontFamily: F.bold, fontSize: 12, letterSpacing: 1.2, color: C.muted }}>ТАК ВИДИТ УЧАСТНИК</Text>
+            <Text style={{ fontFamily: F.bold, fontSize: 12, letterSpacing: 1.2, color: C.muted }}>{__('ТАК ВИДИТ УЧАСТНИК')}</Text>
             <PhonePreview t={t} trip={preview} width={phoneW} />
           </ScrollView>
         ) : null}
       </View>
       {!side ? (
         <>
-          <Press onPress={() => setSheet(true)} label="Предпросмотр: так видит участник"
+          <Press onPress={() => setSheet(true)} label={__("Предпросмотр: так видит участник")}
             style={{ position: 'absolute', right: 16, bottom: insets.bottom + 18, flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, height: 48, borderRadius: 24, backgroundColor: C.dark, boxShadow: SH.dark }}>
             <Icon name="people" size={18} color="#fff" />
-            <Text style={{ fontFamily: F.bold, fontSize: 14, color: '#fff' }}>Предпросмотр</Text>
+            <Text style={{ fontFamily: F.bold, fontSize: 14, color: '#fff' }}>{__('Предпросмотр')}</Text>
           </Press>
           <Modal visible={sheet} transparent animationType="fade" onRequestClose={() => setSheet(false)}>
             <View style={{ flex: 1, backgroundColor: 'rgba(15, 27, 45, 0.55)', alignItems: 'center', justifyContent: 'center', padding: 12 }}>
               <PhonePreview t={t} trip={preview} width={Math.min(300, width - 40)} />
-              <View style={{ marginTop: 12 }}><Button title="Закрыть" kind="light" onPress={() => setSheet(false)} /></View>
+              <View style={{ marginTop: 12 }}><Button title={__("Закрыть")} kind="light" onPress={() => setSheet(false)} /></View>
             </View>
           </Modal>
         </>

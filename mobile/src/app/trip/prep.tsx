@@ -21,6 +21,7 @@ import { RemindersCard } from '@/ui/RemindersCard';
 import { RouteMap } from '@/ui/RouteMap';
 import { C, F, SH } from '@/ui/theme';
 import { TENANT } from '@/data/tenant';
+import { __ } from '@/i18n';
 
 /** «Страна: связь, оплата, розетки» — раскрывающиеся советы с отметкой «сделано»; набор — по стране поездки. */
 function CountryPrep() {
@@ -232,6 +233,9 @@ export default function Prep() {
           <CountryPrep />
           <EsimOffers />
           <CountryApps />
+          <Card onPress={() => router.push('/settings')} label={__('Язык и тема')}>
+            <Row left={<Icon name="globe" size={22} color={C.blueInk} />} title={__('Язык и тема')} sub={__('6 языков интерфейса, светлая и тёмная тема')} />
+          </Card>
         </>
       ) : stage === 'during' ? (
 <During />

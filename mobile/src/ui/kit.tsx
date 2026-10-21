@@ -36,7 +36,7 @@ export function Screen({ eyebrow, title, dark, children, right }: { eyebrow?: st
       <View style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={s.body}><Cascade>{children}</Cascade></ScrollView>
         {/* карточки мягко уходят под шапку, а не обрезаются по линии */}
-        <LinearGradient pointerEvents="none" colors={[dark ? 'rgba(232,237,244,0)' : C.bg, 'rgba(232,237,244,0)']} style={{ position: 'absolute', left: 0, right: 0, top: 0, height: 18 }} />
+        <LinearGradient pointerEvents="none" colors={[dark ? `${C.bg}00` : C.bg, `${C.bg}00`]} style={{ position: 'absolute', left: 0, right: 0, top: 0, height: 18 }} />
       </View>
     </View>
   );
@@ -218,7 +218,7 @@ export const s = StyleSheet.create({
   rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 10 },
   card: { backgroundColor: C.card, borderRadius: 24, paddingVertical: 15, paddingHorizontal: 17, gap: 8, boxShadow: SH.clay },
   cardDark: { backgroundColor: C.dark, boxShadow: SH.dark },
-  cardWarn: { backgroundColor: '#fdf0e6' },
+  cardWarn: { backgroundColor: C.warnCard },
   h3: { fontFamily: F.bold, fontSize: 15, color: C.ink },
   t: { fontFamily: F.regular, fontSize: 14, lineHeight: 20, color: C.ink },
   muted: { color: C.muted, fontSize: 12.5, lineHeight: 18 },

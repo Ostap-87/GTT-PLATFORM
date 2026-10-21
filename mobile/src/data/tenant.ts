@@ -3,29 +3,30 @@
 // Участник попадает к своему организатору по коду приглашения; первый организатор — сам GTT. Разбор — docs/market-research.md.
 // Конструктор (/builder, решение 21.10.2026): организатор сам задаёт название, логотип, цвет и собирает экран из блоков.
 import type { IconName } from '@/ui/icon-paths';
-import { C, SH } from '@/ui/theme';
+import { C, DARK, GLOW, SH } from '@/ui/theme';
+import { __ } from '@/i18n';
 
 /** Где хранятся данные участников клиента: Россия (152-ФЗ), Китай, Казахстан, ЕС, Ближний Восток, США. */
 export type DataRegion = 'ru' | 'cn' | 'kz' | 'eu' | 'me' | 'us';
-export const REGION_RU: Record<DataRegion, string> = { ru: 'Россия', cn: 'Китай', kz: 'Казахстан', eu: 'Евросоюз', me: 'Ближний Восток', us: 'США' };
+export const REGION_RU: Record<DataRegion, string> = { ru: __('Россия'), cn: __('Китай'), kz: __('Казахстан'), eu: __('Евросоюз'), me: __('Ближний Восток'), us: __('США') };
 
 /** Блоки экрана «Сегодня» — организатор включает нужные и ставит в своём порядке. */
 export type TodayBlock = 'now' | 'next' | 'ann' | 'tools' | 'coord' | 'weather' | 'route';
 export const TODAY_BLOCKS: [TodayBlock, string, string][] = [
-  ['now', 'Сейчас', 'ближайшее событие, «Я в автобусе», такси'],
-  ['next', 'Дальше сегодня', 'лента времени с логотипами компаний'],
-  ['ann', 'Объявление координатора', 'последнее сообщение для группы'],
-  ['tools', 'Под рукой', 'плитки быстрых действий'],
-  ['coord', 'Координатор', 'написать и позвонить'],
-  ['weather', 'Погода и отель', 'прогноз и адрес отеля'],
-  ['route', 'Маршрут поездки', 'схема городов'],
+  ['now', __('Сейчас'), __('ближайшее событие, «Я в автобусе», такси')],
+  ['next', __('Дальше сегодня'), __('лента времени с логотипами компаний')],
+  ['ann', __('Объявление координатора'), __('последнее сообщение для группы')],
+  ['tools', __('Под рукой'), __('плитки быстрых действий')],
+  ['coord', __('Координатор'), __('написать и позвонить')],
+  ['weather', __('Погода и отель'), __('прогноз и адрес отеля')],
+  ['route', __('Маршрут поездки'), __('схема городов')],
 ];
 /** Плитки «Под рукой»: ключ, подпись, значок, экран. */
 export type ToolKey = 'translator' | 'docs' | 'help' | 'expenses' | 'city' | 'guide' | 'cards' | 'chat';
 export const TOOLS: [ToolKey, string, IconName, string][] = [
-  ['translator', 'Переводчик', 'translate', '/translator'], ['docs', 'Документы', 'passport', '/docs'], ['help', 'Помощь', 'help', '/help'],
-  ['expenses', 'Расходы', 'receipt', '/expenses'], ['city', 'Город', 'map', '/city'], ['guide', 'Гид', 'headphones', '/guide'],
-  ['cards', 'Визитки', 'card', '/cards'], ['chat', 'Чат', 'chat', '/chat'],
+  ['translator', __('Переводчик'), 'translate', '/translator'], ['docs', __('Документы'), 'passport', '/docs'], ['help', __('Помощь'), 'help', '/help'],
+  ['expenses', __('Расходы'), 'receipt', '/expenses'], ['city', __('Город'), 'map', '/city'], ['guide', __('Гид'), 'headphones', '/guide'],
+  ['cards', __('Визитки'), 'card', '/cards'], ['chat', __('Чат'), 'chat', '/chat'],
 ];
 const ALL_BLOCKS = TODAY_BLOCKS.map(([key]) => ({ key, on: true }));
 const BASE_TOOLS: ToolKey[] = ['translator', 'docs', 'help', 'expenses', 'city', 'guide'];
@@ -68,15 +69,15 @@ export type Tenant = {
 
 export const TENANTS: Tenant[] = [
   {
-    id: 'gtt', name: 'Global Tech Tour', short: 'GTT', tagline: 'Экспедиции к лидерам технологий', code: 'GTT',
+    id: 'gtt', name: 'Global Tech Tour', short: 'GTT', tagline: __('Экспедиции к лидерам технологий'), code: 'GTT',
     accent: '#1a73e8', accentInk: '#1558b8', accentSoft: '#dde8fb', heroFrom: '#2b80f2', heroTo: '#0f4fc0', rgb: '26, 115, 232',
-    icons3d: true, coordinator: { name: 'Остап Доценко', initials: 'ОД' }, home: 'ru', region: 'ru',
+    icons3d: true, coordinator: { name: __('Остап Доценко'), initials: __('ОД') }, home: 'ru', region: 'ru',
     blocks: ALL_BLOCKS, tools: BASE_TOOLS, tabs: { library: true, people: true },
   },
   {
-    id: 'demo', name: 'Ваш бренд', short: 'ВБ', tagline: 'Так выглядит приложение под брендом организатора', code: 'DEMO',
+    id: 'demo', name: __('Ваш бренд'), short: __('ВБ'), tagline: __('Так выглядит приложение под брендом организатора'), code: 'DEMO',
     accent: '#0f8a6c', accentInk: '#0b6b54', accentSoft: '#d6efe7', heroFrom: '#1aa585', heroTo: '#0b6b54', rgb: '15, 138, 108',
-    icons3d: false, coordinator: { name: 'Мария Иванова', initials: 'МИ' }, home: 'ru', region: 'ru', demo: true,
+    icons3d: false, coordinator: { name: __('Мария Иванова'), initials: __('МИ') }, home: 'ru', region: 'ru', demo: true,
     blocks: ALL_BLOCKS, tools: ['translator', 'docs', 'help', 'chat', 'expenses', 'cards'], tabs: { library: true, people: true },
   },
 ];
@@ -121,7 +122,7 @@ export function uniqueCode(name: string, selfId = '') {
 /** Новый организатор с настройками по умолчанию — заготовка конструктора. */
 export function blankTenant(): Tenant {
   return {
-    id: `t${Date.now()}`, name: '', short: '', tagline: 'Деловые поездки', code: '', ...deriveBrand(PALETTE[2]),
+    id: `t${Date.now()}`, name: '', short: '', tagline: __('Деловые поездки'), code: '', ...deriveBrand(PALETTE[2]),
     icons3d: false, coordinator: { name: '', initials: '' }, home: 'ru', region: 'ru',
     blocks: ALL_BLOCKS.map((b) => ({ ...b })), tools: [...BASE_TOOLS], tabs: { library: true, people: true }, custom: true,
   };
@@ -131,10 +132,15 @@ export function blankTenant(): Tenant {
 export function applyTenant(id: string | null | undefined) {
   const t = allTenants().find((x) => x.id === id) || TENANTS[0];
   Object.assign(TENANT, t);
-  Object.assign(C as unknown as Record<string, string>, { blue: t.accent, blueInk: t.accentInk, blueSoft: t.accentSoft, heroFrom: t.heroFrom, heroTo: t.heroTo });
+  // в тёмной теме акцент чуть светлее, текст акцентом — светлый, подложка кнопок — тёмная с оттенком бренда
+  const a = hexRgb(t.accent);
+  const brand = DARK
+    ? { blue: toHex(mix(a, [255, 255, 255], 0.12)), blueInk: toHex(mix(a, [255, 255, 255], 0.4)), blueSoft: toHex(mix(a, hexRgb(C.card), 0.78)) }
+    : { blue: t.accent, blueInk: t.accentInk, blueSoft: t.accentSoft };
+  Object.assign(C as unknown as Record<string, string>, { ...brand, heroFrom: t.heroFrom, heroTo: t.heroTo });
   Object.assign(SH as unknown as Record<string, string>, {
     blue: `0px 8px 16px rgba(${t.rgb}, 0.32), inset -2px -3px 6px rgba(0, 0, 0, 0.12), inset 2px 2px 5px rgba(255, 255, 255, 0.25)`,
-    hero: `0px 14px 30px rgba(${t.rgb}, 0.32), -6px -6px 16px #ffffff`,
+    hero: `0px 14px 30px rgba(${t.rgb}, 0.32), -6px -6px 16px ${GLOW}`,
   });
   return t.id;
 }

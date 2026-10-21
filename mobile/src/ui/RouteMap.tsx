@@ -6,7 +6,12 @@ import Svg, { Circle, G, Path, Rect, Text as SvgText } from 'react-native-svg';
 
 import type { Box, ProvinceShape } from '@/data/geo';
 import { mapRoute, type MapLeg, type MapStop } from '@/data/map-route';
-import { C, F } from './theme';
+import { C, DARK, F } from './theme';
+
+/** Цвета карты под тему: суша, регионы маршрута, выбранный регион, границы. */
+const MAP = DARK
+  ? { land: '#222c3b', route: '#1d3352', sel: '#2a4a78', routeLine: '#5d8fd6', line: '#3a465a' }
+  : { land: '#ffffff', route: '#e4eefd', sel: '#cfe0fc', routeLine: '#7aa7ec', line: '#b9c3d4' };
 
 const CAMERA_MS = 750;
 const ARC_MS = 1300;
@@ -31,7 +36,7 @@ const Provinces = memo(function Provinces({ shapes, route, k, selProvince }: { s
     <>
       {shapes.map((p) => {
         const onRoute = route.has(p.en);
-        return <Path key={p.en} d={p.d} fill={p.en === selProvince ? '#cfe0fc' : onRoute ? '#e4eefd' : '#ffffff'} stroke={onRoute ? '#7aa7ec' : '#b9c3d4'} strokeWidth={(onRoute ? 1.2 : 0.8) * k} />;
+        return <Path key={p.en} d={p.d} fill={p.en === selProvince ? MAP.sel : onRoute ? MAP.route : MAP.land} stroke={onRoute ? MAP.routeLine : MAP.line} strokeWidth={(onRoute ? 1.2 : 0.8) * k} />;
       })}
     </>
   );
@@ -119,7 +124,7 @@ export function RouteMap({ cc, stops, legs, shown, sel, zoomed, onPick, compact,
           const a = arcs[i];
           const done = i < shown;
           const current = i === shown - 1 && drawing;
-          const color = done ? C.blue : '#b9c3d4';
+          const color = done ? C.blue : MAP.line;
           const dash = l.how === 'plane' ? [7 * k, 6 * k] : undefined;
           const tip = a.at(current ? prog : 0.5);
           return (

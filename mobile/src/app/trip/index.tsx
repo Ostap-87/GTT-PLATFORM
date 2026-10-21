@@ -9,7 +9,7 @@ import { GUIDE } from '@/data/extras';
 import { NOW, VISITS, toMin } from '@/data/group';
 import { routeText } from '@/data/route';
 import { TENANT, TOOLS, type TodayBlock } from '@/data/tenant';
-import { CITY, DAYS, DAY_NOTES, TRIP, WEATHER, dayEvents, hotelOf, monthOf, weatherLine, type TripEvent } from '@/data/trip';
+import { CITY, DAYS, DAY_NOTES, TRIP, WEATHER, dayEvents, hotelOf, dayTitle, weatherLine, type TripEvent } from '@/data/trip';
 import { useCoord } from '@/state/coord';
 import { useToast } from '@/state/toast';
 import { useTrip } from '@/state/trip';
@@ -20,12 +20,13 @@ import { ND, Press, Pulse, reduceMotion } from '@/ui/motion';
 import { OfflineNote } from '@/ui/OfflineNote';
 import { Timeline } from '@/ui/trip-ui';
 import { C, F, SH } from '@/ui/theme';
+import { __ } from '@/i18n';
 
 /** «через 25 минут» — от текущего времени демо до события. */
 function untilText(t: string) {
   const m = toMin(t) - toMin(NOW);
-  if (m <= 0) return 'сейчас';
-  return m < 60 ? `через ${m} мин` : `через ${Math.floor(m / 60)} ч ${m % 60 ? `${m % 60} мин` : ''}`.trim();
+  if (m <= 0) return __('сейчас');
+  return m < 60 ? __('через {a} мин', { a: m }) : __('через {a} ч {b}', { a: Math.floor(m / 60), b: m % 60 ? __('{a} мин', { a: m % 60 }) : '' }).trim();
 }
 
 export default function Today() {
@@ -50,39 +51,39 @@ export default function Today() {
     switch (key) {
       case 'now': return dep || k.guideLive ? (
         <View key={key} style={{ gap: 14 }}>
-          <Section title="Сейчас" />
+          <Section title={__("Сейчас")} />
           {dep ? <NowHero dep={dep} onTaxi={() => router.push({ pathname: '/driver', params: taxi })} /> : null}
           {k.guideLive ? (
-            <Card tone="info" onPress={() => router.push('/guide')} label="Гид в эфире — слушать">
-              <Row left={<Icon name="headphones" size={24} color={C.blueInk} />} title="Гид в эфире" sub={`${GUIDE.name} · нажмите, чтобы слушать в наушниках`} />
+            <Card tone="info" onPress={() => router.push('/guide')} label={__("Гид в эфире — слушать")}>
+              <Row left={<Icon name="headphones" size={24} color={C.blueInk} />} title={__("Гид в эфире")} sub={__('{a} · нажмите, чтобы слушать в наушниках', { a: GUIDE.name })} />
             </Card>
           ) : null}
         </View>
       ) : null;
       case 'next': return rest.length ? (
         <View key={key} style={{ gap: 14 }}>
-          <Section title="Дальше сегодня" link="Весь план" onLink={() => router.push('/trip/plan')} />
+          <Section title={__("Дальше сегодня")} link={__("Весь план")} onLink={() => router.push('/trip/plan')} />
           <Timeline events={rest} from={1} />
           {DAY_NOTES[i] ? <T muted style={{ paddingHorizontal: 4 }}>{DAY_NOTES[i]}</T> : null}
         </View>
       ) : null;
       case 'ann': return ann ? (
         <Card key={key} tone="warn">
-          <TitleRow title={<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}><Icon name="megaphone" size={20} color={C.warn} /><H3>Объявление координатора</H3></View>} right={<T muted>{ann.time}</T>} />
+          <TitleRow title={<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}><Icon name="megaphone" size={20} color={C.warn} /><H3>{__('Объявление координатора')}</H3></View>} right={<T muted>{ann.time}</T>} />
           <T>{ann.ru}</T>
         </Card>
       ) : null;
       case 'tools': return tools.length ? (
         <View key={key} style={{ gap: 14 }}>
-          <Section title="Под рукой" />
+          <Section title={__("Под рукой")} />
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
             {tools.map(([tk, title, icon, to]) => {
               const sos = tk === 'help';
               return (
                 <Press key={tk} onPress={() => router.push(to as never)} label={title} scaleTo={0.93}
                   style={{ flexBasis: '29%', flexGrow: 1, alignItems: 'center', gap: 7, paddingTop: 13, paddingBottom: 11, borderRadius: 22, backgroundColor: C.card, boxShadow: SH.clay }}>
-                  <View style={{ width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: sos ? '#fbe4d4' : C.well, boxShadow: SH.inset }}>
-                    <Icon name={icon} size={22} color={sos ? '#d9622b' : C.blueInk} />
+                  <View style={{ width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: sos ? C.warnSoft : C.well, boxShadow: SH.inset }}>
+                    <Icon name={icon} size={22} color={sos ? C.warn : C.blueInk} />
                   </View>
                   <Text style={{ fontFamily: F.semibold, fontSize: 12.5, color: C.ink }}>{title}</Text>
                 </Press>
@@ -93,30 +94,30 @@ export default function Today() {
       ) : null;
       case 'coord': return (
         <Card key={key}>
-          <Row left={<Avatar text={TENANT.coordinator.initials} size={42} />} title={TENANT.coordinator.name} sub="Координатор · на связи круглосуточно" />
+          <Row left={<Avatar text={TENANT.coordinator.initials} size={42} />} title={TENANT.coordinator.name} sub={__("Координатор · на связи круглосуточно")} />
           <View style={{ flexDirection: 'row', gap: 10 }}>
             <View style={{ flex: 1 }}>
-              <Button title={unread > 0 ? `Написать · ${unread}` : 'Написать'} icon="chat" label={unread > 0 ? `Чат с координатором: ${unread} новых` : 'Написать координатору'} onPress={() => router.push('/chat')} />
+              <Button title={unread > 0 ? __('Написать · {a}', { a: unread }) : __('Написать')} icon="chat" label={unread > 0 ? __('Чат с координатором: {a} новых', { a: unread }) : __('Написать координатору')} onPress={() => router.push('/chat')} />
             </View>
             <View style={{ flex: 1 }}>
-              <Button title="Позвонить" icon="phone" kind="light" onPress={() => (TENANT.phone ? Linking.openURL(`tel:${TENANT.phone.replace(/[^+\d]/g, '')}`) : router.push('/contacts'))} />
+              <Button title={__("Позвонить")} icon="phone" kind="light" onPress={() => (TENANT.phone ? Linking.openURL(`tel:${TENANT.phone.replace(/[^+\d]/g, '')}`) : router.push('/contacts'))} />
             </View>
           </View>
         </Card>
       );
       case 'weather': return (
         <Card key={key}>
-          <H3>Погода и отель</H3>
+          <H3>{__('Погода и отель')}</H3>
           <Row left={<Icon name={w.icon} size={26} />} title={`${weatherLine(w)} · ${CITY[i]}`} sub={w.text} />
           {h ? (
-            <Row left={<Icon name="bed" size={26} />} title={h.name} sub={`${h.nights} · ${h.addrZh ? 'адрес на 3 языках' : 'адрес пришлёт координатор'}`}
-              right={<Chip>отель</Chip>} onPress={() => router.push(`/hotel/${h.key}`)} label={`Отель: ${h.name}`} />
+            <Row left={<Icon name="bed" size={26} />} title={h.name} sub={`${h.nights} · ${h.addrZh ? __('адрес на 3 языках') : __('адрес пришлёт координатор')}`}
+              right={<Chip>{__('отель')}</Chip>} onPress={() => router.push(`/hotel/${h.key}`)} label={__('Отель: {a}', { a: h.name })} />
           ) : null}
         </Card>
       );
       case 'route': return (
-        <Card key={key} onPress={() => router.push('/route')} label="Маршрут поездки на схеме">
-          <Row left={<Icon name="route" size={24} color={C.blueInk} />} title={TRIP.title} sub={routeText()} right={<Chip tone="info">маршрут</Chip>} />
+        <Card key={key} onPress={() => router.push('/route')} label={__("Маршрут поездки на схеме")}>
+          <Row left={<Icon name="route" size={24} color={C.blueInk} />} title={TRIP.title} sub={routeText()} right={<Chip tone="info">{__('маршрут')}</Chip>} />
         </Card>
       );
       default: return null;
@@ -124,13 +125,13 @@ export default function Today() {
   };
 
   return (
-    <Screen eyebrow={`${d.wd}, ${d.n} ${monthOf(i)} · ${CITY[i]}${w.max ? ` · ${w.max}` : ''}`} title="Сегодня"
-      right={<Button title="Сменить поездку" kind="light" small label={`Сменить поездку. Сейчас: ${TRIP.title}`} onPress={() => router.push('/demo')} />}>
+    <Screen eyebrow={`${dayTitle(i)} · ${CITY[i]}${w.max ? ` · ${w.max}` : ''}`} title={__("Сегодня")}
+      right={<Button title={__("Сменить поездку")} kind="light" small label={__('Сменить поездку. Сейчас: {a}', { a: TRIP.title })} onPress={() => router.push('/demo')} />}>
       <OfflineNote />
-      <Card onPress={() => router.push('/search')} label="Поиск по поездке" style={{ paddingVertical: 13, borderRadius: 18 }}>
+      <Card onPress={() => router.push('/search')} label={__("Поиск по поездке")} style={{ paddingVertical: 13, borderRadius: 18 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
           <Icon name="search" size={20} color={C.muted} />
-          <Text style={{ fontFamily: F.medium, fontSize: 15, color: C.muted }}>Поиск: компания, адрес, телефон</Text>
+          <Text style={{ fontFamily: F.medium, fontSize: 15, color: C.muted }}>{__('Поиск: компания, адрес, телефон')}</Text>
         </View>
       </Card>
       {TENANT.blocks.filter((b) => b.on).map((b) => block(b.key))}
@@ -155,7 +156,7 @@ function NowHero({ dep, onTaxi }: { dep: TripEvent; onTaxi: () => void }) {
     loop.start();
     return () => loop.stop();
   }, [shine, wd]);
-  const big = dep.name === 'Выезд из отеля' ? `Выезд в ${dep.t}` : `${dep.t} · ${dep.name}`;
+  const big = dep.name === __('Выезд из отеля') ? __('Выезд в {a}', { a: dep.t }) : `${dep.t} · ${dep.name}`;
   return (
     <View style={{ borderRadius: 26, boxShadow: SH.hero }} onLayout={(e) => setWd(e.nativeEvent.layout.width)}>
       <LinearGradient colors={[C.heroFrom, C.heroTo]} start={{ x: 0.1, y: 0 }} end={{ x: 0.9, y: 1 }} style={{ borderRadius: 26, overflow: 'hidden', paddingHorizontal: 18, paddingTop: 18, paddingBottom: 16 }}>
@@ -177,16 +178,16 @@ function NowHero({ dep, onTaxi }: { dep: TripEvent; onTaxi: () => void }) {
         <Text style={{ fontFamily: F.display, fontSize: 40, lineHeight: 42, color: '#fff', textTransform: 'uppercase', marginTop: 6 }}>{big}</Text>
         {dep.place ? <Text style={{ fontFamily: F.regular, fontSize: 14, color: 'rgba(255,255,255,0.8)', marginTop: 2 }}>{dep.place}</Text> : null}
         <View style={{ flexDirection: 'row', gap: 10, marginTop: 14 }}>
-          <Press onPress={() => { setInBus(!inBus); if (!inBus) { okFeel(); toast(`Координатор видит: в автобусе ${k.busCount + 1} из 18`); } }} feel={false} scaleTo={0.94}
-            label={inBus ? 'В автобусе — отменить отметку' : 'Я в автобусе'} state={{ selected: inBus }}
+          <Press onPress={() => { setInBus(!inBus); if (!inBus) { okFeel(); toast(__('Координатор видит: в автобусе {a} из 18', { a: k.busCount + 1 })); } }} feel={false} scaleTo={0.94}
+            label={inBus ? __('В автобусе — отменить отметку') : __('Я в автобусе')} state={{ selected: inBus }}
             style={{ flex: 1, height: 48, borderRadius: 18, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: inBus ? '#dcf7e6' : '#ffffff', boxShadow: 'inset -3px -3px 6px rgba(0,0,0,0.08), 4px 4px 10px rgba(0,0,0,0.14)' }}>
             <Icon name={inBus ? 'check' : 'bus'} size={19} color={inBus ? '#137a43' : C.blue} />
-            <Text style={{ fontFamily: F.bold, fontSize: 15, color: inBus ? '#137a43' : C.blue }}>{inBus ? 'В автобусе' : 'Я в автобусе'}</Text>
+            <Text style={{ fontFamily: F.bold, fontSize: 15, color: inBus ? '#137a43' : C.blue }}>{inBus ? __('В автобусе') : __('Я в автобусе')}</Text>
           </Press>
-          <Press onPress={onTaxi} label="Такси: адрес для водителя" scaleTo={0.94}
+          <Press onPress={onTaxi} label={__("Такси: адрес для водителя")} scaleTo={0.94}
             style={{ flex: 1, height: 48, borderRadius: 18, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: 'rgba(255,255,255,0.16)', boxShadow: 'inset 3px 3px 6px rgba(0,0,0,0.15), inset -2px -2px 6px rgba(255,255,255,0.2)' }}>
             <Icon name="car" size={19} color="#fff" />
-            <Text style={{ fontFamily: F.bold, fontSize: 15, color: '#fff' }}>Такси</Text>
+            <Text style={{ fontFamily: F.bold, fontSize: 15, color: '#fff' }}>{__('Такси')}</Text>
           </Press>
         </View>
       </LinearGradient>

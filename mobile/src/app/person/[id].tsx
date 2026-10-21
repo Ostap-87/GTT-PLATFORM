@@ -98,7 +98,7 @@ export default function Person() {
     <Plain>
       {head}
       {alg.length || health.length ? (
-        <Card tone={p.severe ? undefined : 'warn'} style={p.severe ? { backgroundColor: '#fdecea', borderColor: '#f5c2bb' } : null}>
+        <Card tone={p.severe ? undefined : 'warn'} style={p.severe ? { backgroundColor: C.redSoft, borderColor: C.redLine } : null}>
           <T bold>Важно в поездке</T>
           {alg.length ? <Text style={{ fontFamily: F.bold, fontSize: 14.5, color: p.severe ? C.red : C.warn }}>{`Аллергия: ${alg.join(', ')}${p.severe ? ' — серьёзная, опасна для жизни' : ''}`}</Text> : null}
           {health.length ? <T>{health.join('; ')}</T> : null}

@@ -7,13 +7,14 @@ import { Icon } from '@/ui/Icon';
 import type { IconName } from '@/ui/icon-paths';
 import { TabBar3D } from '@/ui/TabBar3D';
 import { C } from '@/ui/theme';
+import { __ } from '@/i18n';
 
 const TABS: [string, string, IconName][] = [
-  ['index', 'Сегодня', 'sun'],
-  ['plan', 'План', 'cal'],
-  ['library', 'Материалы', 'book'],
-  ['people', 'Люди', 'people'],
-  ['prep', 'Поездка', 'suitcase'],
+  ['index', __('Сегодня'), 'sun'],
+  ['plan', __('План'), 'cal'],
+  ['library', __('Материалы'), 'book'],
+  ['people', __('Люди'), 'people'],
+  ['prep', __('Поездка'), 'suitcase'],
 ];
 
 export default function TripTabs() {

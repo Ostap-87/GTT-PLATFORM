@@ -76,7 +76,7 @@ export function TabBar3D({ state, descriptors, navigation, insets, three, hide =
   return (
     <View
       accessibilityRole="tablist"
-      style={{ position: 'absolute', left: 12, right: 12, bottom: Math.max(insets.bottom, 10) + 4, height: 76, flexDirection: 'row', paddingHorizontal: 4, borderRadius: 28, backgroundColor: '#ffffff', boxShadow: SH.float }}
+      style={{ position: 'absolute', left: 12, right: 12, bottom: Math.max(insets.bottom, 10) + 4, height: 76, flexDirection: 'row', paddingHorizontal: 4, borderRadius: 28, backgroundColor: C.surface, boxShadow: SH.float }}
     >
       {state.routes.map((route, i) => {
         if (hide.includes(route.name)) return null;

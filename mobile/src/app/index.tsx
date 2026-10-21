@@ -4,11 +4,12 @@
 // открывает любую программу сайта глазами делегата (решение 21.10.2026).
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, Animated, Platform, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { AccessibilityInfo, Animated, Linking, Platform, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import catalog from '@/data/catalog.json';
-import { addSample, liveTrip, orgOf, saveOrg } from '@/data/org';
+import { webBase } from '@/data/import';
+import { WEB_URL, addSample, liveTrip, orgOf, saveOrg } from '@/data/org';
 import { TENANT } from '@/data/tenant';
 import { TRIP } from '@/data/trip';
 import { GLOBE_Y, LETTER_H, LETTER_Y, unitPx, type SplashConfig, type SplashEvent } from '@/splash/config';
@@ -18,6 +19,7 @@ import { Button } from '@/ui/kit';
 import { Monogram } from '@/ui/Monogram';
 import { Splash3D } from '@/ui/Splash3D';
 import { C, F } from '@/ui/theme';
+import { __ } from '@/i18n';
 
 const plural = (n: number, a: string, b: string, c: string) => { const m10 = n % 10, m100 = n % 100; return m10 === 1 && m100 !== 11 ? a : m10 >= 2 && m10 <= 4 && (m100 < 10 || m100 >= 20) ? b : c; };
 const native = Platform.OS !== 'web';
@@ -81,9 +83,9 @@ function GttWelcome() {
       <Animated.View pointerEvents="none" style={[st.topBlock, { paddingTop: insets.top + 24, opacity: top }]}>
         <Text style={[st.brand, { color: C.blue }]}>GLOBAL TECH TOUR</Text>
         <Text style={st.big} accessibilityLiveRegion="polite">
-          <Text style={st.num}>{count}</Text> {plural(count, 'страна', 'страны', 'стран')}
+          <Text style={st.num}>{count}</Text> {plural(count, __('страна'), __('страны'), __('стран'))}
         </Text>
-        <Text style={st.sub}>Экспедиции к лидерам технологий — с выездом из Москвы.</Text>
+        <Text style={st.sub}>{__('Экспедиции к лидерам технологий — с выездом из Москвы.')}</Text>
       </Animated.View>
 
       {failed ? (
@@ -94,7 +96,7 @@ function GttWelcome() {
 
       <Animated.View pointerEvents="none" style={[st.center, { top: tagTop, opacity: tag }]}>
         <Text style={[st.brand, { color: C.blue }]}>GLOBAL TECH TOUR</Text>
-        <Text style={st.tagline}>{`Экспедиции в будущее\n9 стран · ${catalog.length} программ`}</Text>
+        <Text style={st.tagline}>{__('Экспедиции в будущее\n9 стран · {a} программ', { a: catalog.length })}</Text>
       </Animated.View>
 
       <Entry bottom={insets.bottom} />
@@ -127,18 +129,26 @@ function Entry({ bottom }: { bottom: number }) {
   const reset = () => {
     if (!armed) { setArmed(true); setTimeout(() => setArmed(false), 4000); return; }
     setArmed(false);
-    resetAll().then(() => toast('Демо начато заново — сохранённое стёрто'));
+    resetAll().then(() => toast(__('Демо начато заново — сохранённое стёрто')));
   };
+  // лендинг платформы (макет с заготовкой тарифов) — статическая страница рядом с веб-версией
+  const openLanding = () => (Platform.OS === 'web' ? location.assign(`${webBase()}/landing/`) : Linking.openURL(`${WEB_URL}/landing/`));
   const links = (
     <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', columnGap: 22, rowGap: 6 }}>
-      <Pressable onPress={() => router.push('/join')} accessibilityRole="button" accessibilityLabel="Ввести код приглашения от организатора" hitSlop={8}>
-        <Text style={[st.note, { color: C.blue, fontFamily: F.semibold }]}>{`Код приглашения · ${TENANT.short}`}</Text>
+      <Pressable onPress={() => router.push('/join')} accessibilityRole="button" accessibilityLabel={__("Ввести код приглашения от организатора")} hitSlop={8}>
+        <Text style={[st.note, { color: C.blue, fontFamily: F.semibold }]}>{__('Код приглашения · {a}', { a: TENANT.short })}</Text>
       </Pressable>
       <Pressable onPress={() => router.push(TENANT.custom ? `/org?id=${TENANT.id}` : '/org')} accessibilityRole="button" hitSlop={8}>
-        <Text style={[st.note, { color: C.blue, fontFamily: F.semibold }]}>Кабинет организатора</Text>
+        <Text style={[st.note, { color: C.blue, fontFamily: F.semibold }]}>{__('Кабинет организатора')}</Text>
       </Pressable>
-      <Pressable onPress={reset} accessibilityRole="button" accessibilityLabel="Начать демо заново" hitSlop={8}>
-        <Text style={[st.note, { color: armed ? C.warn : C.blue, fontFamily: F.semibold }]}>{armed ? 'Нажмите ещё раз — всё сотрётся' : 'Начать демо заново'}</Text>
+      <Pressable onPress={openLanding} accessibilityRole="link" hitSlop={8}>
+        <Text style={[st.note, { color: C.blue, fontFamily: F.semibold }]}>{__('О платформе и тарифы')}</Text>
+      </Pressable>
+      <Pressable onPress={() => router.push('/settings')} accessibilityRole="button" hitSlop={8}>
+        <Text style={[st.note, { color: C.blue, fontFamily: F.semibold }]}>{__('Язык и тема')}</Text>
+      </Pressable>
+      <Pressable onPress={reset} accessibilityRole="button" accessibilityLabel={__("Начать демо заново")} hitSlop={8}>
+        <Text style={[st.note, { color: armed ? C.warn : C.blue, fontFamily: F.semibold }]}>{armed ? __('Нажмите ещё раз — всё сотрётся') : __('Начать демо заново')}</Text>
       </Pressable>
     </View>
   );
@@ -149,32 +159,32 @@ function Entry({ bottom }: { bottom: number }) {
     const sample = () => { saveOrg(TENANT.id, addSample(org)); switchTenant(TENANT.id); setTimeout(() => router.replace('/trip'), 60); };
     return (
       <View style={[st.bottom, { paddingBottom: bottom + 16 }]}>
-        {live ? <Button title="Войти в поездку" onPress={() => router.replace('/trip')} label={`Войти в поездку: ${TRIP.title}`} />
-          : TENANT.custom ? <Button title="Кабинет организатора" icon="grid" onPress={() => router.push(`/org?id=${TENANT.id}`)} />
-            : <Button title="Войти в пример поездки" onPress={() => router.replace('/trip')} />}
-        {live && TENANT.custom ? <Button title="Кабинет организатора" kind="light" icon="grid" onPress={() => router.push(`/org?id=${TENANT.id}`)} /> : null}
-        {!live && TENANT.custom ? <Button title="Пример поездки" kind="light" icon="star" onPress={sample} /> : null}
+        {live ? <Button title={__("Войти в поездку")} onPress={() => router.replace('/trip')} label={__('Войти в поездку: {a}', { a: TRIP.title })} />
+          : TENANT.custom ? <Button title={__("Кабинет организатора")} icon="grid" onPress={() => router.push(`/org?id=${TENANT.id}`)} />
+            : <Button title={__("Войти в пример поездки")} onPress={() => router.replace('/trip')} />}
+        {live && TENANT.custom ? <Button title={__("Кабинет организатора")} kind="light" icon="grid" onPress={() => router.push(`/org?id=${TENANT.id}`)} /> : null}
+        {!live && TENANT.custom ? <Button title={__("Пример поездки")} kind="light" icon="star" onPress={sample} /> : null}
         <View style={{ flexDirection: 'row', gap: 8 }}>
-          <View style={{ flex: 1 }}><Button title="Координатор" kind="light" icon="grid" label="Войти как координатор" onPress={() => router.replace('/coord')} /></View>
+          <View style={{ flex: 1 }}><Button title={__("Координатор")} kind="light" icon="grid" label={__("Войти как координатор")} onPress={() => router.replace('/coord')} /></View>
         </View>
-        <Text style={st.note}>{live ? `Открыто: ${TRIP.title}, ${TRIP.dates}.` : TENANT.custom ? 'Поездок пока нет — создайте первую в кабинете организатора или откройте пример.' : 'Пример поездки — компании и участники вымышленные.'}</Text>
+        <Text style={st.note}>{live ? __('Открыто: {a}, {b}.', { a: TRIP.title, b: TRIP.dates }) : TENANT.custom ? __('Поездок пока нет — создайте первую в кабинете организатора или откройте пример.') : __('Пример поездки — компании и участники вымышленные.')}</Text>
         {links}
       </View>
     );
   }
   return (
       <View style={[st.bottom, { paddingBottom: bottom + 16 }]}>
-        <Button title="Войти в поездку" onPress={() => router.replace('/trip')} label={`Войти в поездку: ${TRIP.title}, демо`} />
-        <Button title={`Выбрать страну и программу · ${catalog.length}`} kind="light" icon="route" label="Выбрать поездку: сначала страна, потом программа" onPress={() => router.push('/demo')} />
+        <Button title={__("Войти в поездку")} onPress={() => router.replace('/trip')} label={__('Войти в поездку: {a}, демо', { a: TRIP.title })} />
+        <Button title={__('Выбрать страну и программу · {a}', { a: catalog.length })} kind="light" icon="route" label={__("Выбрать поездку: сначала страна, потом программа")} onPress={() => router.push('/demo')} />
         <View style={{ flexDirection: 'row', gap: 8 }}>
-          <View style={{ flex: 1 }}><Button title="Координатор" kind="light" icon="grid" label="Войти как координатор" onPress={() => router.replace('/coord')} /></View>
-          <View style={{ flex: 1 }}><Button title="Агент" kind="light" icon="send" label="Войти как агент" onPress={() => router.replace('/agent')} /></View>
+          <View style={{ flex: 1 }}><Button title={__("Координатор")} kind="light" icon="grid" label={__("Войти как координатор")} onPress={() => router.replace('/coord')} /></View>
+          <View style={{ flex: 1 }}><Button title={__("Агент")} kind="light" icon="send" label={__("Войти как агент")} onPress={() => router.replace('/agent')} /></View>
         </View>
         <View style={{ flexDirection: 'row', gap: 8 }}>
-          <View style={{ flex: 1 }}><Button title="Администратор" kind="light" icon="lock" label="Войти как администратор" onPress={() => router.replace('/admin')} /></View>
-          <View style={{ flex: 1 }}><Button title={`Программы · ${catalog.length}`} kind="ghost" icon="globe" label={`Программы ${TENANT.short} · ${catalog.length}`} onPress={() => router.push('/catalog')} /></View>
+          <View style={{ flex: 1 }}><Button title={__("Администратор")} kind="light" icon="lock" label={__("Войти как администратор")} onPress={() => router.replace('/admin')} /></View>
+          <View style={{ flex: 1 }}><Button title={__('Программы · {a}', { a: catalog.length })} kind="ghost" icon="globe" label={__('Программы {a} · {b}', { a: TENANT.short, b: catalog.length })} onPress={() => router.push('/catalog')} /></View>
         </View>
-        <Text style={st.note}>{`Открыто: ${TRIP.title}, ${TRIP.dates}. Участники вымышленные. Всё, что вы отметите, сохраняется на телефоне.`}</Text>
+        <Text style={st.note}>{__('Открыто: {a}, {b}. Участники вымышленные. Всё, что вы отметите, сохраняется на телефоне.', { a: TRIP.title, b: TRIP.dates })}</Text>
         {links}
       </View>
   );

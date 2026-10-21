@@ -1,6 +1,8 @@
 // Тестовая поездка для шага 1: расписание, контакты, материалы. Делегаты вымышленные, телефоны и адреса — примеры.
 // Подробное демо «Новый ритейл Китая» — по умолчанию; другую программу сайта подставляет data/active.ts.
-import { HOTELS, HOTEL_BY_DAY, type Weather } from './trip-base';
+import { LANG, __, dayLabel } from '@/i18n';
+
+import { DAYS, HOTELS, HOTEL_BY_DAY, type Weather } from './trip-base';
 
 export * from './trip-base';
 
@@ -17,10 +19,12 @@ export const TRIP = {
   programId: '',
 };
 /** Погода одной строкой; у программ с сайта прогноза в демо нет. */
-export const weatherLine = (w: Weather) => (w.max ? `${w.max} / ${w.min}` : 'Прогноз позже');
+export const weatherLine = (w: Weather) => (w.max ? `${w.max} / ${w.min}` : __('Прогноз позже'));
 const MONTHS_GEN = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
 /** Месяц дня поездки в родительном падеже — от даты начала (у поездок организатора это не обязательно ноябрь). */
 export const monthOf = (i: number) => MONTHS_GEN[new Date(Date.parse(`${TRIP.start}T00:00:00Z`) + i * 86400000).getUTCMonth()] || 'ноября';
+/** «Вт, 17 ноября» — на русском как раньше, на других языках — по правилам языка (Intl). */
+export const dayTitle = (i: number) => (LANG === 'ru' ? `${DAYS[i].wd}, ${DAYS[i].n} ${monthOf(i)}` : dayLabel(new Date(Date.parse(`${TRIP.start}T00:00:00Z`) + i * 86400000)));
 
 export type EventKind = 'move' | 'co' | 'meal' | 'culture' | 'info';
 export type TripEvent = { t: string; name: string; place: string; kind: EventKind; moved?: boolean; ref?: string };

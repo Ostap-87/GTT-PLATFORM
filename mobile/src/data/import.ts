@@ -7,6 +7,8 @@ import { File } from 'expo-file-system';
 import { strFromU8, unzipSync } from 'fflate';
 import { Platform } from 'react-native';
 
+import { __ } from '@/i18n';
+
 import { COUNTRIES } from './countries';
 import { cityIn, findCity, guessKind, normDate, normTime, uid, type ODay, type OEvent, type OPerson, type OProgram, type Source } from './org';
 import { xlsx, type Cell } from './xlsx';
@@ -28,9 +30,9 @@ export async function pickFile(kinds: Picked['kind'][]): Promise<Picked | { erro
   const r = await DocumentPicker.getDocumentAsync({ type: Platform.OS === 'web' ? kinds.flatMap((k) => ACCEPT[k]) : '*/*', copyToCacheDirectory: true });
   if (r.canceled || !r.assets?.length) return null;
   const a = r.assets[0];
-  if (/\.(xls|doc)$/i.test(a.name)) return { error: 'Старый формат .xls или .doc — сохраните файл как .xlsx или .docx и загрузите снова' };
+  if (/\.(xls|doc)$/i.test(a.name)) return { error: __('Старый формат .xls или .doc — сохраните файл как .xlsx или .docx и загрузите снова') };
   const kind = kindOf(a.name);
-  if (!kind || !kinds.includes(kind)) return { error: `Нужен файл ${kinds.map((k) => `.${k}`).join(', ')}` };
+  if (!kind || !kinds.includes(kind)) return { error: __('Нужен файл {a}', { a: kinds.map((k) => `.${k}`).join(', ') }) };
   const bytes = a.file ? new Uint8Array(await a.file.arrayBuffer()) : await new File(a.uri).bytes();
   return { name: a.name, bytes, kind };
 }
@@ -105,7 +107,7 @@ export function readDocx(bytes: Uint8Array): string[] {
 
 /** Строки PDF — только в браузере (pdf.js из public/pdfjs, без внешних серверов). */
 export async function readPdf(bytes: Uint8Array): Promise<string[]> {
-  if (Platform.OS !== 'web') throw new Error('PDF разбирается в браузерной версии кабинета — откройте её на компьютере или планшете');
+  if (Platform.OS !== 'web') throw new Error(__('PDF разбирается в браузерной версии кабинета — откройте её на компьютере или планшете'));
   const base = webBase();
   // загрузка модуля мимо сборщика: файл лежит рядом с сайтом как есть
   const lib = await (new Function('u', 'return import(u)') as (u: string) => Promise<PdfJs>)(`${base}/pdfjs/pdf.min.mjs`);
@@ -233,7 +235,7 @@ export function programsFromRows(rows: Cell[][], file: string, source: Source): 
     const text = days.flatMap((d) => [d.city, ...d.events.map((e) => `${e.name} ${e.place}`)]).join(' ');
     return { id: uid('p'), title, country: P.country || countryFrom(text) || cityCountry(days) || 'cn', summary: '', days, source, file };
   });
-  return programs.length ? { programs, start: start || undefined } : { programs: [], warning: 'В таблице не нашлось строк с событиями — проверьте столбец «Событие»' };
+  return programs.length ? { programs, start: start || undefined } : { programs: [], warning: __('В таблице не нашлось строк с событиями — проверьте столбец «Событие»') };
 }
 
 const cityCountry = (days: ODay[]) => days.map((d) => findCity(d.city)?.country).find(Boolean);
@@ -308,7 +310,7 @@ export function programFromLines(lines: string[], file: string, source: Source):
   };
   return days.length && days.some((d) => d.events.length)
     ? { programs: [program], start: start || undefined }
-    : { programs: [], warning: 'Не удалось найти дни и время в файле — проверьте, что в нём есть строки вида «День 1» и «10:00 Визит…», или заполните программу вручную' };
+    : { programs: [], warning: __('Не удалось найти дни и время в файле — проверьте, что в нём есть строки вида «День 1» и «10:00 Визит…», или заполните программу вручную') };
 }
 
 /** Любой файл → программы на проверку. */
@@ -339,12 +341,12 @@ export function peopleFromRows(rows: Cell[][]): { people: OPerson[]; warning?: s
     const name = g(r, 'name') || [g(r, 'last'), g(r, 'first')].filter(Boolean).join(' ');
     return { id: uid('u'), name, company: g(r, 'company'), role: g(r, 'role'), phone: g(r, 'phone'), email: g(r, 'email'), invite: 'new' as const };
   }).filter((p) => p.name && !/^(фио|имя|name)$/i.test(p.name));
-  return people.length ? { people } : { people, warning: 'В таблице не нашлось участников — нужен столбец «ФИО» или «Имя»' };
+  return people.length ? { people } : { people, warning: __('В таблице не нашлось участников — нужен столбец «ФИО» или «Имя»') };
 }
 export async function importPeople(f: Picked) {
   if (f.kind === 'xlsx') return peopleFromRows(readXlsx(f.bytes));
   if (f.kind === 'csv') return peopleFromRows(readCsv(f.bytes));
-  return { people: [] as OPerson[], warning: 'Участников загружаем из Excel или CSV' };
+  return { people: [] as OPerson[], warning: __('Участников загружаем из Excel или CSV') };
 }
 
 // ——— шаблоны Excel для скачивания ———

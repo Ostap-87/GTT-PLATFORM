@@ -14,6 +14,7 @@ import type { IconName } from './icon-paths';
 import { Button, Card, Chip, Row, s as kit } from './kit';
 import { Appear, Press } from './motion';
 import { C, F, SH } from './theme';
+import { __ } from '@/i18n';
 
 /** Логотип компании с сайта (как в карточках компаний globaltechtour.ru); картинка кэшируется и открывается без сети. */
 export const logoUrl = (path: string) => `https://globaltechtour.ru${encodeURI(path)}`;
@@ -32,11 +33,13 @@ export function CoLogo({ path, fallback = 'building', color = C.blue, w = 54, h 
 // функция, а не константа: синий — цвет бренда организатора, его меняет applyTenant
 const kindOf = (k: EventKind): [string, IconName] => ({ co: [C.blue, 'building'], meal: [C.green, 'food'], move: ['#8a94a6', 'bus'], culture: [C.violet, 'culture'], info: [C.blueInk, 'megaphone'] } as Record<EventKind, [string, IconName]>)[k];
 const moveIcon = (name: string): IconName => (/перел|вылет|прил/i.test(name) ? 'plane' : /поезд/i.test(name) ? 'train' : 'bus');
-const chipOf = (e: TripEvent): [string, string] => (e.moved ? ['перенесено', '#d9822b']
-  : e.kind === 'co' ? ['визит', C.blue]
-    : e.kind === 'meal' ? [/обед/i.test(e.name) ? 'обед' : 'ужин', C.green]
-      : e.kind === 'culture' ? ['культура', C.violet]
-        : e.kind === 'move' ? ['переезд', '#8a94a6'] : ['инфо', C.blueInk]);
+// обед или ужин — по названию события (оно на языке организатора)
+const mealOf = (e: TripEvent) => (/обед|lunch|午餐|түскі|غداء|दोपहर/i.test(e.name) ? __('обед') : __('ужин'));
+const chipOf = (e: TripEvent): [string, string] => (e.moved ? [__('перенесено'), '#d9822b']
+  : e.kind === 'co' ? [__('визит'), C.blue]
+    : e.kind === 'meal' ? [mealOf(e), C.green]
+      : e.kind === 'culture' ? [__('культура'), C.violet]
+        : e.kind === 'move' ? [__('переезд'), '#8a94a6'] : [__('инфо'), C.blueInk]);
 const hrefOf = (e: TripEvent) => {
   const visit = e.kind === 'co' ? VISITS.find((v) => v.name === e.name) : undefined;
   return { visit, href: e.ref?.startsWith('m-') ? `/meal/${e.ref}` : e.ref?.startsWith('c-') ? `/culture/${e.ref}` : visit ? `/company/${visit.id}` : null };
@@ -93,11 +96,11 @@ const tl = StyleSheet.create({
 });
 
 export function EventRow({ e }: { e: TripEvent }) {
-  const chip = e.moved ? <Chip tone="warn">перенесено</Chip>
-    : e.kind === 'co' ? <Chip>визит</Chip>
-      : e.kind === 'meal' ? <Chip tone="ok">{/обед/i.test(e.name) ? 'обед' : 'ужин'}</Chip>
-        : e.kind === 'culture' ? <Chip tone="dark">культура</Chip>
-          : e.kind === 'move' ? <Chip tone="plain">переезд</Chip> : null;
+  const chip = e.moved ? <Chip tone="warn">{__('перенесено')}</Chip>
+    : e.kind === 'co' ? <Chip>{__('визит')}</Chip>
+      : e.kind === 'meal' ? <Chip tone="ok">{mealOf(e)}</Chip>
+        : e.kind === 'culture' ? <Chip tone="dark">{__('культура')}</Chip>
+          : e.kind === 'move' ? <Chip tone="plain">{__('переезд')}</Chip> : null;
   const { href } = hrefOf(e);
   return (
     <Row
@@ -114,7 +117,7 @@ export function Address3({ zh, ru, en, note }: { zh: string; ru: string; en: str
   const toast = useToast();
   const copy = async (text: string) => {
     try { await Clipboard.setStringAsync(text); } catch { /* буфер недоступен — достаточно сообщения */ }
-    toast('Адрес скопирован');
+    toast(__('Адрес скопирован'));
   };
   const cn = TRIP.country === 'cn';
   const openMaps = () => {
@@ -128,17 +131,17 @@ export function Address3({ zh, ru, en, note }: { zh: string; ru: string; en: str
     <Row
       key={label}
       title={<View><Text style={[kit.rowSub, { fontFamily: F.bold, marginTop: 0 }]}>{label}</Text><Text style={cjk ? { fontSize: 20, fontFamily: F.bold, color: C.ink } : { fontSize: 14, fontFamily: F.regular, color: C.ink }} selectable>{text}</Text></View>}
-      right={<Pressable onPress={() => copy(text)} accessibilityRole="button" accessibilityLabel={`Скопировать адрес: ${label}`} hitSlop={8}><Icon name="copy" size={20} color={C.blueInk} /></Pressable>}
+      right={<Pressable onPress={() => copy(text)} accessibilityRole="button" accessibilityLabel={__('Скопировать адрес: {a}', { a: label })} hitSlop={8}><Icon name="copy" size={20} color={C.blueInk} /></Pressable>}
     />
   );
   return (
     <Card style={{ backgroundColor: C.bg }}>
-      {zh ? line(`${countryOf(TRIP.country).lang.self} · для водителя`, zh, true) : null}
-      {ru ? line('Русский', ru) : null}
+      {zh ? line(__('{a} · для водителя', { a: countryOf(TRIP.country).lang.self }), zh, true) : null}
+      {ru ? line(__('Русский'), ru) : null}
       {en ? line('English', en) : null}
       {note ? <Text style={kit.muted}>{note}</Text> : null}
-      {zh ? <Button title="Показать водителю" full onPress={() => router.push({ pathname: '/driver', params: { zh, ru } })} /> : null}
-      {zh || en ? <Button title={`Открыть в картах (${cn ? 'Amap' : 'Google'})`} kind="ghost" full onPress={openMaps} /> : null}
+      {zh ? <Button title={__('Показать водителю')} full onPress={() => router.push({ pathname: '/driver', params: { zh, ru } })} /> : null}
+      {zh || en ? <Button title={__('Открыть в картах ({a})', { a: cn ? 'Amap' : 'Google' })} kind="ghost" full onPress={openMaps} /> : null}
     </Card>
   );
 }
