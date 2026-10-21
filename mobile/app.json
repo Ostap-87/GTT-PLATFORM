@@ -1,19 +1,19 @@
 {
   "expo": {
-    "name": "Global Tech Tour",
-    "slug": "gttapp",
+    "name": "GTT Platform",
+    "slug": "gttplatform",
     "owner": "ostap87s-team",
-    "scheme": "gtt",
+    "scheme": "gttplatform",
     "version": "0.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "ru.globaltechtour.app"
+      "bundleIdentifier": "ru.globaltechtour.platform"
     },
     "android": {
-      "package": "ru.globaltechtour.app",
+      "package": "ru.globaltechtour.platform",
       "adaptiveIcon": {
         "backgroundColor": "#1a73e8",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -25,7 +25,7 @@
     "web": {
       "favicon": "./assets/favicon.png",
       "output": "single",
-      "name": "Global Tech Tour",
+      "name": "GTT Platform",
       "themeColor": "#1a73e8"
     },
     "plugins": [
@@ -75,13 +75,7 @@
         "asyncRoutes": {
           "web": true
         }
-      },
-      "eas": {
-        "projectId": "6278a801-0230-42b8-82bc-40928acebfb5"
       }
-    },
-    "updates": {
-      "url": "https://u.expo.dev/6278a801-0230-42b8-82bc-40928acebfb5"
     }
   }
 }

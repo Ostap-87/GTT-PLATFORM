@@ -1,3 +1,16 @@
+# GTT Platform — white label для организаторов поездок
+
+Платформа на основе приложения Global Tech Tour ([Ostap-87/GTT-APP](https://github.com/Ostap-87/GTT-APP)): организатор,
+купивший подписку, сам собирает приложение для своих участников — логотип, название, цвет, координатор, экран «Сегодня»
+из блоков, плитки и вкладки — и раздаёт код приглашения. Подробности и правила — [`CLAUDE.md`](CLAUDE.md),
+рынки и модель — [`docs/market-research.md`](docs/market-research.md).
+
+Обновления общего приложения приходят из GTT-APP: `git fetch https://github.com/Ostap-87/GTT-APP.git main && git merge FETCH_HEAD`.
+
+---
+
+Ниже — описание основы (приложение GTT).
+
 # Global Tech Tour — приложение
 
 Мобильное приложение (iOS и Android) и веб-панель для бизнес-экспедиций Global Tech Tour
