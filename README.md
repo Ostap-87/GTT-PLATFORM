@@ -7,7 +7,8 @@
 
 **В браузере** (компьютер, планшет, телефон): https://ostap-87.github.io/GTT-PLATFORM/ · кабинет организатора —
 https://ostap-87.github.io/GTT-PLATFORM/org. Путь клиента — [`docs/client-journey.md`](docs/client-journey.md).
-Лендинг (макет с заготовкой тарифов) — https://ostap-87.github.io/GTT-PLATFORM/landing/. Языки: русский, английский, китайский,
+Лендинг (макет с заготовкой тарифов) — https://ostap-87.github.io/GTT-PLATFORM/landing/. «Продажа тура» (страница тура и баннеры для
+соцсетей) — в кабинете организатора, раздел «Продажа тура». Языки: русский, английский, китайский,
 казахский, арабский, хинди; тема светлая и тёмная.
 
 Обновления общего приложения приходят из GTT-APP: `git fetch https://github.com/Ostap-87/GTT-APP.git main && git merge FETCH_HEAD`.

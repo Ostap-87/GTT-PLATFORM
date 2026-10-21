@@ -60,27 +60,34 @@ if (Platform.OS === 'web' && typeof document !== 'undefined') {
 // Казахского нет в части браузеров и телефонов (Intl тогда пишет даты по-английски) — свои названия месяцев и дней.
 const KK_MONTHS = ['қаңтар', 'ақпан', 'наурыз', 'сәуір', 'мамыр', 'маусым', 'шілде', 'тамыз', 'қыркүйек', 'қазан', 'қараша', 'желтоқсан'];
 const KK_DAYS = ['жс', 'дс', 'сс', 'ср', 'бс', 'жм', 'сб'];
-const OWN_DATES = LANG === 'kk' && (() => {
-  try { return Intl.DateTimeFormat.supportedLocalesOf([LOCALE.kk]).length === 0; } catch { return true; }
-})();
+/** Движок не знает языка (так бывает с казахским) — даты собираем сами. */
+const noIntl = (l: Lang) => {
+  try { return Intl.DateTimeFormat.supportedLocalesOf([LOCALE[l]]).length === 0; } catch { return true; }
+};
+const OWN = { kk: noIntl('kk') };
+const ownDates = (l: Lang) => l === 'kk' && OWN.kk;
 
 /** Дата «пн, 16 ноября» на языке интерфейса. */
-export function dayLabel(d: Date) {
-  if (OWN_DATES) return `${KK_DAYS[d.getUTCDay()]}, ${d.getUTCDate()} ${KK_MONTHS[d.getUTCMonth()]}`;
+export const dayLabel = (d: Date) => dayLabelIn(LANG, d);
+/** «16–19 ноября 2026» / «16–19 November 2026». */
+export const rangeLabel = (a: Date, b: Date) => rangeLabelIn(LANG, a, b);
+
+/** То же на заданном языке — для страницы тура и баннеров, у которых язык свой, а не язык кабинета. */
+export function dayLabelIn(l: Lang, d: Date) {
+  if (ownDates(l)) return `${KK_DAYS[d.getUTCDay()]}, ${d.getUTCDate()} ${KK_MONTHS[d.getUTCMonth()]}`;
   try {
-    return new Intl.DateTimeFormat(LOCALE[LANG], { weekday: 'short', day: 'numeric', month: 'long', timeZone: 'UTC' }).format(d);
+    return new Intl.DateTimeFormat(LOCALE[l], { weekday: 'short', day: 'numeric', month: 'long', timeZone: 'UTC' }).format(d);
   } catch {
     return d.toISOString().slice(0, 10);
   }
 }
-/** «16–19 ноября 2026» / «16–19 November 2026». */
-export function rangeLabel(a: Date, b: Date) {
-  if (OWN_DATES) {
+export function rangeLabelIn(l: Lang, a: Date, b: Date) {
+  if (ownDates(l)) {
     const [ma, mb] = [KK_MONTHS[a.getUTCMonth()], KK_MONTHS[b.getUTCMonth()]];
     return `${b.getUTCFullYear()} жылғы ${ma === mb ? `${a.getUTCDate()}–${b.getUTCDate()} ${mb}` : `${a.getUTCDate()} ${ma} – ${b.getUTCDate()} ${mb}`}`;
   }
   try {
-    const f = new Intl.DateTimeFormat(LOCALE[LANG], { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+    const f = new Intl.DateTimeFormat(LOCALE[l], { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
     return (f as Intl.DateTimeFormat & { formatRange?: (x: Date, y: Date) => string }).formatRange?.(a, b) ?? `${f.format(a)} – ${f.format(b)}`;
   } catch {
     return `${a.toISOString().slice(0, 10)} – ${b.toISOString().slice(0, 10)}`;

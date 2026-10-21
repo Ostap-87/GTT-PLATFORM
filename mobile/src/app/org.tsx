@@ -112,6 +112,12 @@ function Cabinet({ id, step0 }: { id?: string; step0?: Step }) {
     setTimeout(() => { switchTenant(t.id); router.replace('/trip'); }, 60);
   };
 
+  // «Продажа тура» — страница тура и баннеры (src/app/sale.tsx); кабинет должен быть уже создан
+  const goSale = (programId?: string) => {
+    if (!saved) { create('programs', true); return; }
+    router.push(programId ? `/sale?id=${t.id}&program=${programId}` : `/sale?id=${t.id}`);
+  };
+
   const i = STEPS.findIndex(([k]) => k === step);
   const [, title, , sub] = STEPS[i];
   const done: Record<Step, boolean> = {
@@ -128,7 +134,7 @@ function Cabinet({ id, step0 }: { id?: string; step0?: Step }) {
   const content = (
     step === 'company' ? <CompanyStep t={t} patch={patch} org={org} upd={upd} saved={saved} onCreate={() => create()} onPrograms={() => setStep('programs')} />
       : step === 'brand' ? <BrandForm t={t} patch={patch} hex={hex} setHex={setHex} />
-        : step === 'programs' ? <ProgramsStep org={org} upd={upd} onPreview={setPreviewProgram} goTrip={() => setStep('trip')} />
+        : step === 'programs' ? <ProgramsStep org={org} upd={upd} onPreview={setPreviewProgram} goTrip={() => setStep('trip')} onSale={(pid) => goSale(pid)} />
           : step === 'trip' ? <TripStep org={org} upd={upd} sel={sel} setSel={setSel} goPrograms={() => setStep('programs')} />
             : step === 'people' ? <PeopleStep org={org} upd={upd} sel={sel} setSel={setSel} goTrip={() => setStep('trip')} />
               : <InviteStep t={t} patch={patch} org={org} upd={upd} sel={sel} openAsDelegate={openAsDelegate} />
@@ -165,6 +171,7 @@ function Cabinet({ id, step0 }: { id?: string; step0?: Step }) {
           </View>
           {stepList}
           {step !== 'programs' ? <Button title={__("Загрузить программу")} icon="plus" kind="light" small onPress={() => setStep('programs')} /> : null}
+          <SaleLink onPress={() => goSale()} />
           <View style={{ flex: 1 }} />
           {saved ? <Button title={__("Открыть как участник")} icon="people" kind="light" small onPress={openAsDelegate} /> : null}
           <Pressable onPress={() => router.push('/settings')} accessibilityRole="button" hitSlop={6}><Text style={{ fontFamily: F.semibold, fontSize: 13, color: C.blueInk }}>{`${__('Язык и тема')} · ${LANG.toUpperCase()}`}</Text></Pressable>
@@ -179,6 +186,10 @@ function Cabinet({ id, step0 }: { id?: string; step0?: Step }) {
               <Text style={{ fontFamily: F.semibold, fontSize: 13, color: k === step ? '#fff' : C.ink }}>{name}</Text>
             </Press>
           ))}
+          <Press onPress={() => goSale()} label={__('Продажа тура')} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, height: 38, borderRadius: 19, backgroundColor: C.card, boxShadow: SH.small }}>
+            <Icon name="megaphone" size={15} color={C.blueInk} />
+            <Text style={{ fontFamily: F.semibold, fontSize: 13, color: C.ink }}>{__('Продажа тура')}</Text>
+          </Press>
           <Press onPress={() => router.push('/settings')} label={__('Язык и тема')} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, height: 38, borderRadius: 19, backgroundColor: C.card, boxShadow: SH.small }}>
             <Icon name="globe" size={15} color={C.blueInk} />
             <Text style={{ fontFamily: F.semibold, fontSize: 13, color: C.ink }}>{LANG.toUpperCase()}</Text>
@@ -224,3 +235,16 @@ function Cabinet({ id, step0 }: { id?: string; step0?: Step }) {
   );
 }
 
+/** Вход в «Продажу тура» из меню кабинета: заметная плитка, а не строчка — это то, ради чего организатор платит. */
+function SaleLink({ onPress }: { onPress: () => void }) {
+  return (
+    <Press onPress={onPress} label={__('Продажа тура')} scaleTo={0.98}
+      style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderRadius: 16, backgroundColor: C.blueSoft }}>
+      <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: C.blue, alignItems: 'center', justifyContent: 'center' }}><Icon name="megaphone" size={17} color="#fff" /></View>
+      <View style={{ flex: 1 }}>
+        <Text style={{ fontFamily: F.bold, fontSize: 14, color: C.ink }}>{__('Продажа тура')}</Text>
+        <Text style={{ fontFamily: F.regular, fontSize: 12, color: C.muted }}>{__('Страница и баннеры для соцсетей')}</Text>
+      </View>
+    </Press>
+  );
+}

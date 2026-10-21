@@ -63,7 +63,7 @@ export function CompanyStep({ t, patch, org, upd, saved, onCreate, onPrograms }:
 // ——— 3. Программы ———
 type Edit = { p: OProgram; banner?: string; start?: string; isNew: boolean };
 
-export function ProgramsStep({ org, upd, onPreview, goTrip }: { org: Org; upd: Upd; onPreview: (programId: string) => void; goTrip: () => void }) {
+export function ProgramsStep({ org, upd, onPreview, goTrip, onSale }: { org: Org; upd: Upd; onPreview: (programId: string) => void; goTrip: () => void; onSale?: (programId: string) => void }) {
   const toast = useToast();
   const [edit, setEdit] = useState<Edit | null>(null);
   const [tpl, setTpl] = useState(false);
@@ -148,6 +148,7 @@ export function ProgramsStep({ org, upd, onPreview, goTrip }: { org: Org; upd: U
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
             <Button title={__("Изменить")} kind="light" small icon="doc" onPress={() => open({ p, isNew: false })} />
             <Button title={__("Поездка по программе")} kind="light" small icon="cal" onPress={() => { if (!org.trips.some((x) => x.programId === p.id)) upd((o) => ({ ...o, trips: [...o.trips, newTrip(p, '2026-11-16')] })); goTrip(); }} />
+            {onSale ? <Button title={__("Продать: страница и баннеры")} kind="light" small icon="megaphone" onPress={() => onSale(p.id)} /> : null}
             <Button title={armed === p.id ? __('Нажмите ещё раз — удалить') : __('Удалить')} kind="ghost" small onPress={() => remove(p)} />
           </View>
         </Card>

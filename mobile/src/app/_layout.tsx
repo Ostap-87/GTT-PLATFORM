@@ -114,6 +114,7 @@ export default function RootLayout() {
             <Stack.Screen name="builder" options={{ title: __('Конструктор организатора') }} />
             <Stack.Screen name="org" options={{ title: __('Кабинет организатора') }} />
             <Stack.Screen name="settings" options={{ title: __('Язык и тема') }} />
+            <Stack.Screen name="sale" options={{ title: __('Продажа тура') }} />
             <Stack.Screen name="country/[code]" options={{ title: __('Памятка по стране') }} />
             <Stack.Screen name="admin" options={{ headerShown: false }} />
             <Stack.Screen name="admin-trip/[id]" options={{ title: __('Поездка') }} />

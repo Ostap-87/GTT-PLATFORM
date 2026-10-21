@@ -12,6 +12,7 @@ import type { Leg as RouteLeg, Stop } from './route';
 import type { Tenant } from './tenant';
 import type { EventKind, TripEvent } from './trip';
 import type { Culture, Hotel, Meal, Weather } from './trip-base';
+import type { OPage } from './sale';
 import { LANG, __, dayLabel, rangeLabel } from '@/i18n';
 
 export type OEvent = { id: string; t: string; name: string; place: string; kind: EventKind };
@@ -20,7 +21,9 @@ export type Source = 'manual' | 'template' | 'sample' | 'xlsx' | 'docx' | 'pdf' 
 export type OProgram = { id: string; title: string; country: string; summary: string; days: ODay[]; source: Source; file?: string };
 export type OPerson = { id: string; name: string; company: string; role: string; phone: string; email: string; invite: 'new' | 'sent' | 'joined' };
 export type OTrip = { id: string; programId: string; title: string; start: string; hotel: string; published: boolean; people: OPerson[] };
-export type Org = { contact: { email: string; phone: string; site: string }; programs: OProgram[]; trips: OTrip[]; active: string };
+/** pages — страницы тура для продажи (src/data/sale.ts); pagesMade — сколько создано всего (удаление не возвращает бесплатную);
+ * plan — подписка: бесплатно 2 страницы, «pro» — без ограничений. */
+export type Org = { contact: { email: string; phone: string; site: string }; programs: OProgram[]; trips: OTrip[]; active: string; pages?: OPage[]; pagesMade?: number; plan?: 'free' | 'pro' };
 
 export const SOURCE_RU: Record<Source, string> = {
   manual: __('вручную'), template: __('из шаблона'), sample: __('пример'), xlsx: __('из Excel'), docx: __('из Word'), pdf: __('из PDF'), csv: __('из CSV'),

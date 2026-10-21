@@ -11,6 +11,9 @@ export const MIME = {
   vcf: ['text/vcard', 'public.vcard'],
   pdf: ['application/pdf', 'com.adobe.pdf'],
   svg: ['image/svg+xml', 'public.svg-image'],
+  html: ['text/html', 'public.html'],
+  png: ['image/png', 'public.png'],
+  zip: ['application/zip', 'public.zip-archive'],
 } as const;
 
 export async function shareFile(name: string, data: string | Uint8Array, kind: keyof typeof MIME, title?: string): Promise<boolean> {
