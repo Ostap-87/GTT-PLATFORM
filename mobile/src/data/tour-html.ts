@@ -33,7 +33,7 @@ function section(c: PageCtx, key: string, x: TourHtmlInput): string {
   ${cover && x.photos[cover.id] ? `<div ${bg(cover)}></div><div class="dim" style="opacity:${Math.min(0.7, cover.dim || 0)}"></div>` : ''}<div class="shade"></div>
   <div class="wrap hero-in">
     ${text.badge.trim() ? `<span class="badge">${esc(text.badge)}</span>` : ''}
-    <h1${c.lang === 'kk' ? ' lang="ru"' : ''}>${esc(text.title)}</h1>
+    <h1${c.lang === 'kk' || (c.lang !== 'ru' && /[а-яё]/i.test(text.title)) ? ' lang="ru"' : ''}>${esc(text.title)}</h1>
     ${text.subtitle.trim() ? `<p class="sub">${nl(text.subtitle)}</p>` : ''}
     <div class="chips"><span>📅 ${esc(c.dates)}</span>${c.route ? `<span>📍 ${esc(c.route)}</span>` : ''}</div>
     <div class="cta-row"><a class="btn" href="#request-${c.lang}">${cta} <span aria-hidden="true">${arrow}</span></a><span class="price">${esc(text.price.trim() || L.priceAsk)}</span></div>

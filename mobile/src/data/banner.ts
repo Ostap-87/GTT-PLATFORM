@@ -87,8 +87,9 @@ export async function renderBanner(b: BannerInput, scale = 1): Promise<HTMLCanva
   const cv = document.createElement('canvas');
   cv.width = Math.round(W * scale);
   cv.height = Math.round(H * scale);
-  // язык текста нужен шрифту: без него Sofia Sans рисует болгарские «в», «д», «т»; у казахского — русские формы
-  const shapeLang = b.lang === 'kk' ? 'ru' : b.lang;
+  // язык текста нужен шрифту: без него Sofia Sans рисует болгарские «в», «д», «т». Кириллица (казахский или ещё не
+  // переведённый русский заголовок на странице другого языка) — русские формы
+  const shapeLang = /[а-яёәғқңөұүһі]/i.test(`${b.title}${b.badge}${b.sub}${b.cta}`) ? 'ru' : b.lang;
   cv.setAttribute('lang', shapeLang);
   cv.style.cssText = 'position:fixed;left:-100000px;top:0;visibility:hidden';
   document.body.appendChild(cv);
