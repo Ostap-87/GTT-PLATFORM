@@ -1,0 +1,1003 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>GTT Platform — приложение поездки под вашим брендом</title>
+<meta name="description" content="Приложение деловой поездки под брендом организатора: программа из Excel, Word или PDF, участники, код приглашения и QR.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%231a73e8'/%3E%3Cg fill='none' stroke='%23fff' stroke-width='2.4' stroke-linecap='round'%3E%3Ccircle cx='10' cy='22' r='2.6'/%3E%3Ccircle cx='22' cy='10' r='2.6'/%3E%3Cpath d='M12.6 22H19a3.5 3.5 0 0 0 0-7h-6a3.5 3.5 0 0 1 0-7h6.4'/%3E%3C/g%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sofia+Sans+Extra+Condensed:wght@700;800&family=Noto+Sans+SC:wght@400;700&family=Noto+Sans+Arabic:wght@400;700&family=Noto+Sans+Devanagari:wght@400;700&display=swap">
+<!-- Макет лендинга платформы (решение пользователя 21.10.2026: «собрать макет лендинга… с тарифами — тарифы придумаем позже»).
+     Тексты на шести языках — словарь T внизу; язык и тема общие с приложением (localStorage gtt:pref:lang / gtt:pref:theme). -->
+<style>
+:root {
+  --bg: #e8edf4; --card: #eef2f8; --surface: #ffffff; --ink: #0f1b2d; --muted: #5b6576; --line: #d6dde8; --well: #e3e9f2;
+  --shade: #cdd5e1; --glow: #ffffff;
+  --accent: #1a73e8; --accent2: #0f4fc0; --accentSoft: #dde8fb; --accentInk: #1558b8;
+  --ok: #1e6b45; --okSoft: #dcf1e4; --warn: #a2470a; --warnSoft: #fdeadb; --violet: #7048e8; --orange: #e8590c; --green: #1e8e5a;
+  --mark: #fff1c2; --markInk: #6b4e00; --onAccent: #ffffff;
+  --head: rgba(232, 237, 244, .82);
+  --fb: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --fd: 'Sofia Sans Extra Condensed', 'Arial Narrow', 'Inter', sans-serif;
+  --hs: 1;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #141a23; --card: #1b2330; --surface: #222c3b; --ink: #e9eef6; --muted: #9aa5b6; --line: #2b3546; --well: #121822;
+    --shade: #0a0e14; --glow: #232d3c;
+    --accent: #4c94f5; --accent2: #1a5fd0; --accentSoft: #1d3352; --accentInk: #8fbaf8;
+    --ok: #6fd59f; --okSoft: #16372a; --warn: #ffb27a; --warnSoft: #3a2617; --violet: #9b84ff; --orange: #ff9a5c; --green: #4cc38a;
+    --mark: #3d3212; --markInk: #ffd98a; --onAccent: #ffffff;
+    --head: rgba(20, 26, 35, .82);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #141a23; --card: #1b2330; --surface: #222c3b; --ink: #e9eef6; --muted: #9aa5b6; --line: #2b3546; --well: #121822;
+  --shade: #0a0e14; --glow: #232d3c;
+  --accent: #4c94f5; --accent2: #1a5fd0; --accentSoft: #1d3352; --accentInk: #8fbaf8;
+  --ok: #6fd59f; --okSoft: #16372a; --warn: #ffb27a; --warnSoft: #3a2617; --violet: #9b84ff; --orange: #ff9a5c; --green: #4cc38a;
+  --mark: #3d3212; --markInk: #ffd98a; --onAccent: #ffffff;
+  --head: rgba(20, 26, 35, .82);
+  color-scheme: dark;
+}
+:root[lang="zh"] { --fb: 'Inter', 'Noto Sans SC', 'PingFang SC', sans-serif; --fd: 'Noto Sans SC', 'PingFang SC', sans-serif; --hs: .74; }
+:root[lang="ar"] { --fb: 'Noto Sans Arabic', 'Inter', sans-serif; --fd: 'Noto Sans Arabic', sans-serif; --hs: .7; }
+:root[lang="hi"] { --fb: 'Noto Sans Devanagari', 'Inter', sans-serif; --fd: 'Noto Sans Devanagari', sans-serif; --hs: .7; }
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { scroll-behavior: smooth; scroll-padding-top: 84px; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { transition: none !important; } }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.55 var(--fb); -webkit-font-smoothing: antialiased; }
+a { color: inherit; }
+svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+.wrap { max-width: 1180px; margin-inline: auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+h1, h2, h3 { font-family: var(--fd); margin: 0; text-wrap: balance; letter-spacing: -.005em; }
+h2 { font-size: calc(clamp(38px, 5vw, 60px) * var(--hs)); font-weight: 800; line-height: .98; }
+h3 { font-family: var(--fb); font-size: 18px; font-weight: 700; line-height: 1.3; }
+p { margin: 0; }
+em.acc { font-style: normal; color: var(--accent); }
+mark { background: var(--mark); color: var(--markInk); border-radius: 6px; padding: 0 .3em; font-weight: 600; }
+.muted { color: var(--muted); }
+.kicker { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--accentInk); }
+:root[lang="ar"] .kicker, :root[lang="hi"] .kicker, :root[lang="zh"] .kicker { letter-spacing: 0; }
+.clay { background: var(--card); border-radius: 26px; box-shadow: 8px 8px 18px var(--shade), -8px -8px 18px var(--glow); }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 52px; padding: 0 26px; border-radius: 18px; border: 0; cursor: pointer;
+  font: 600 16px/1 var(--fb); text-decoration: none; transition: transform .15s ease, box-shadow .15s ease; }
+.btn:active { transform: translateY(1px) scale(.99); }
+.btn.primary { color: var(--onAccent); background: linear-gradient(160deg, var(--accent), var(--accent2));
+  box-shadow: 0 10px 22px color-mix(in srgb, var(--accent) 35%, transparent), inset -2px -3px 6px rgba(0,0,0,.14), inset 2px 2px 5px rgba(255,255,255,.25); }
+.btn.soft { color: var(--ink); background: var(--card); box-shadow: 5px 5px 12px var(--shade), -5px -5px 12px var(--glow); }
+.btn:focus-visible, .chip:focus-visible, .tab:focus-visible, .dot:focus-visible, select:focus-visible, summary:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+.arr { display: inline-block; }
+[dir="rtl"] .arr { transform: scaleX(-1); }
+section { padding-block: clamp(56px, 9vw, 104px); }
+.sec-head { display: grid; gap: 14px; max-width: 760px; margin-bottom: 40px; }
+.sec-head p { color: var(--muted); font-size: 18px; max-width: 62ch; }
+
+/* полоса «макет» */
+.notice { background: var(--warnSoft); color: var(--warn); font-size: 14px; font-weight: 500; }
+.notice .wrap { display: flex; align-items: center; gap: 10px; padding-block: 9px; }
+.notice b { width: 8px; height: 8px; border-radius: 50%; background: currentColor; flex: none; }
+
+/* шапка */
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+header { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 9; background: var(--head); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+header .wrap { display: flex; align-items: center; gap: 22px; min-height: 72px; }
+.logo { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; font: 800 26px/1 'Sofia Sans Extra Condensed', 'Arial Narrow', sans-serif; letter-spacing: .01em; white-space: nowrap; }
+.logo i { width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; color: #fff;
+  background: linear-gradient(150deg, var(--accent), var(--accent2)); box-shadow: 0 6px 14px color-mix(in srgb, var(--accent) 35%, transparent); }
+.logo i svg { width: 22px; height: 22px; stroke-width: 2.2; }
+nav { display: flex; gap: 22px; margin-inline-start: 8px; }
+nav a { text-decoration: none; color: var(--muted); font-weight: 500; font-size: 15px; white-space: nowrap; }
+nav a:hover { color: var(--ink); }
+.tools { display: flex; align-items: center; gap: 10px; margin-inline-start: auto; }
+.sel { position: relative; display: inline-flex; align-items: center; }
+.sel svg { position: absolute; inset-inline-start: 12px; width: 18px; height: 18px; color: var(--muted); pointer-events: none; }
+select { appearance: none; -webkit-appearance: none; height: 44px; padding-inline: 38px 14px; border: 0; border-radius: 14px; background: var(--card); color: var(--ink);
+  font: 500 15px var(--fb); cursor: pointer; box-shadow: inset 3px 3px 6px var(--shade), inset -3px -3px 6px var(--glow); }
+.iconbtn { width: 44px; height: 44px; border-radius: 14px; border: 0; display: grid; place-items: center; cursor: pointer; color: var(--ink); background: var(--card);
+  box-shadow: 4px 4px 10px var(--shade), -4px -4px 10px var(--glow); }
+.iconbtn .moon { display: none; }
+:root[data-dark="1"] .iconbtn .sun { display: none; }
+:root[data-dark="1"] .iconbtn .moon { display: block; }
+header .btn { min-height: 44px; padding: 0 18px; font-size: 15px; border-radius: 14px; }
+@media (max-width: 980px) { nav { display: none; } }
+@media (max-width: 600px) { header .btn { display: none; } .logo span { font-size: 22px; } }
+
+/* первый экран */
+.hero { padding-block: clamp(36px, 6vw, 72px) clamp(56px, 8vw, 96px); }
+.hero .wrap { display: grid; grid-template-columns: minmax(0, 1.08fr) minmax(0, .92fr); gap: clamp(32px, 5vw, 64px); align-items: center; }
+.hero-text { display: grid; gap: 24px; min-width: 0; }
+.hero h1 { font-size: calc(clamp(50px, 7.6vw, 98px) * var(--hs)); font-weight: 800; line-height: .92; }
+:root[lang="zh"] .hero h1, :root[lang="ar"] .hero h1, :root[lang="hi"] .hero h1 { font-weight: 700; line-height: 1.18; }
+:root[lang="zh"] h2, :root[lang="ar"] h2, :root[lang="hi"] h2 { font-weight: 700; line-height: 1.25; }
+.lead { font-size: clamp(17px, 1.6vw, 20px); color: var(--muted); max-width: 56ch; }
+.cta-row { display: flex; flex-wrap: wrap; gap: 14px; }
+.works { display: flex; align-items: center; gap: 12px; color: var(--muted); font-size: 15px; }
+.works span.devs { display: inline-flex; gap: 4px; color: var(--accentInk); }
+.works svg { width: 20px; height: 20px; }
+.stage { display: grid; justify-items: center; gap: 22px; min-width: 0; }
+@media (max-width: 900px) { .hero .wrap { grid-template-columns: minmax(0, 1fr); } }
+
+/* телефон */
+.phone { --pb: #1a73e8; width: min(312px, 100%); aspect-ratio: 312 / 632; max-width: 100%; border-radius: 48px; padding: 12px; background: var(--card);
+  box-shadow: 14px 18px 36px var(--shade), -10px -10px 26px var(--glow), inset 0 0 0 1px color-mix(in srgb, var(--line) 60%, transparent); }
+.screen { position: relative; height: 100%; border-radius: 37px; overflow: hidden; background: var(--bg); display: flex; flex-direction: column; font-size: 12.5px; line-height: 1.35; }
+.sbar { display: flex; justify-content: space-between; align-items: center; padding: 12px 22px 4px; font-weight: 600; font-size: 12px; }
+.sbar .isl { width: 86px; height: 24px; border-radius: 14px; background: #0b1017; }
+.ph-head { display: flex; align-items: center; gap: 10px; padding: 8px 16px 10px; }
+.ph-logo { width: 34px; height: 34px; border-radius: 11px; display: grid; place-items: center; color: #fff; background: linear-gradient(150deg, var(--pb), color-mix(in srgb, var(--pb) 62%, #000)); flex: none; }
+.ph-logo svg { width: 19px; height: 19px; stroke-width: 2.3; }
+.ph-head b { display: block; font-size: 14px; }
+.ph-head small { color: var(--muted); font-size: 11.5px; }
+.scr { flex: 1; overflow: hidden; padding: 4px 14px 0; display: grid; gap: 10px; align-content: start; }
+.now { border-radius: 20px; padding: 14px; color: #fff; background: linear-gradient(155deg, color-mix(in srgb, var(--pb) 88%, #fff), color-mix(in srgb, var(--pb) 62%, #000));
+  box-shadow: 0 12px 24px color-mix(in srgb, var(--pb) 32%, transparent); display: grid; gap: 4px; }
+.now .lbl { font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; opacity: .85; }
+.now .t { font: 800 30px/1 'Sofia Sans Extra Condensed', 'Arial Narrow', sans-serif; }
+.now b { font-size: 14.5px; }
+.now span { opacity: .85; }
+.mini { background: var(--card); border-radius: 18px; padding: 12px; box-shadow: 4px 4px 10px var(--shade), -4px -4px 10px var(--glow); display: grid; gap: 8px; }
+.mini .h { font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.row { display: flex; align-items: center; gap: 10px; }
+.row .tm { font-weight: 700; width: 40px; flex: none; }
+.row .k { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.call { display: flex; align-items: center; gap: 10px; padding: 11px 12px; border-radius: 16px; background: var(--card); box-shadow: 4px 4px 10px var(--shade), -4px -4px 10px var(--glow); font-weight: 600; }
+.call i { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; color: #fff; background: var(--green); }
+.call svg { width: 15px; height: 15px; }
+.day { background: var(--card); border-radius: 16px; padding: 10px 12px; box-shadow: 4px 4px 10px var(--shade), -4px -4px 10px var(--glow); }
+.day b { display: block; color: color-mix(in srgb, var(--pb) 80%, var(--ink)); }
+.day span { color: var(--muted); }
+.av { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; color: #fff; font-weight: 700; font-size: 11px; flex: none; }
+.person { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 14px; background: var(--card); box-shadow: 3px 3px 8px var(--shade), -3px -3px 8px var(--glow); }
+.person b { display: block; }
+.person span span { color: var(--muted); font-size: 11.5px; }
+.msg { max-width: 82%; padding: 9px 12px; border-radius: 16px; background: var(--card); box-shadow: 3px 3px 8px var(--shade), -3px -3px 8px var(--glow); }
+.msg small { display: block; font-weight: 700; color: color-mix(in srgb, var(--pb) 80%, var(--ink)); font-size: 10.5px; }
+.msg.me { justify-self: end; background: var(--pb); color: #fff; box-shadow: none; border-end-end-radius: 6px; }
+.msg:not(.me) { border-end-start-radius: 6px; }
+.tabs { display: grid; grid-template-columns: repeat(4, 1fr); margin: 10px; padding: 6px; border-radius: 22px; background: var(--surface); box-shadow: 0 8px 20px color-mix(in srgb, var(--shade) 80%, transparent); }
+.tab { border: 0; background: none; color: var(--muted); display: grid; justify-items: center; gap: 2px; padding: 6px 0; border-radius: 16px; cursor: pointer; font: 600 10.5px var(--fb); }
+.tab svg { width: 20px; height: 20px; }
+.tab[aria-selected="true"] { color: var(--pb); background: color-mix(in srgb, var(--pb) 12%, transparent); }
+.under { display: grid; justify-items: center; gap: 10px; text-align: center; }
+.dots { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+.dot { width: 30px; height: 30px; border-radius: 50%; border: 0; cursor: pointer; box-shadow: 3px 3px 8px var(--shade), -3px -3px 8px var(--glow); }
+.dot[aria-pressed="true"] { box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px currentColor; }
+.under small { color: var(--muted); font-size: 14px; }
+
+/* для кого / возможности */
+.grid4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 22px; }
+.card { padding: 26px; display: grid; gap: 12px; align-content: start; min-width: 0; }
+.card p { color: var(--muted); }
+.ico { width: 48px; height: 48px; border-radius: 16px; display: grid; place-items: center; color: var(--accentInk); background: var(--accentSoft); }
+.ico svg { width: 24px; height: 24px; }
+
+/* шаги */
+.steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 22px; counter-reset: s; }
+.step { padding: 26px; display: grid; gap: 10px; align-content: start; position: relative; }
+.step .n { font: 800 64px/0.85 'Sofia Sans Extra Condensed', 'Arial Narrow', sans-serif; color: var(--accent); }
+.step p { color: var(--muted); }
+.steps-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 16px 22px; margin-top: 30px; }
+@media (max-width: 980px) { .steps { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .steps { grid-template-columns: minmax(0, 1fr); } }
+
+/* загрузка программы */
+.imp { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: clamp(28px, 5vw, 60px); align-items: center; }
+.imp-text { display: grid; gap: 22px; min-width: 0; }
+.imp-text > p { color: var(--muted); font-size: 18px; }
+.files { display: flex; flex-wrap: wrap; gap: 12px; }
+.file { display: inline-flex; align-items: center; gap: 10px; padding: 10px 14px 10px 10px; border-radius: 16px; background: var(--card); font-weight: 600;
+  box-shadow: 4px 4px 10px var(--shade), -4px -4px 10px var(--glow); }
+.file i { font: 700 11px/1 var(--fb); font-style: normal; color: #fff; padding: 7px 6px; border-radius: 8px; letter-spacing: .02em; }
+.imp-note { font-size: 14px; color: var(--muted); }
+.conv { display: grid; grid-template-columns: minmax(0, .9fr) auto minmax(0, 1.15fr); gap: 14px; align-items: center; }
+.doc { padding: 18px; border-radius: 22px; background: var(--surface); box-shadow: 8px 8px 18px var(--shade), -8px -8px 18px var(--glow); display: grid; gap: 7px; font-size: 14px; min-width: 0; }
+.doc .fn { display: flex; align-items: center; gap: 8px; font-weight: 700; padding-bottom: 8px; border-bottom: 1px solid var(--line); margin-bottom: 4px; }
+.doc .fn i { font: 700 10px/1 var(--fb); font-style: normal; color: #fff; background: #2b5797; padding: 5px; border-radius: 6px; }
+.doc p { overflow-wrap: break-word; }
+.doc p.dh { font-weight: 700; margin-top: 4px; }
+.flow { width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; color: #fff; background: linear-gradient(150deg, var(--accent), var(--accent2)); box-shadow: 0 8px 18px color-mix(in srgb, var(--accent) 35%, transparent); }
+.parsed { padding: 16px; display: grid; gap: 8px; min-width: 0; font-size: 14px; }
+.parsed .dh { font-weight: 700; color: var(--accentInk); margin-top: 2px; }
+.ev { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 14px; background: var(--well);
+  box-shadow: inset 2px 2px 5px var(--shade), inset -2px -2px 5px var(--glow); }
+.ev b { font-variant-numeric: tabular-nums; }
+.ev span { overflow-wrap: break-word; min-width: 0; }
+.kind { font-size: 11.5px; font-weight: 700; padding: 4px 8px; border-radius: 999px; white-space: nowrap; }
+.okline { display: inline-flex; align-items: center; gap: 8px; margin-top: 6px; font-weight: 600; color: var(--ok); background: var(--okSoft); padding: 8px 12px; border-radius: 12px; justify-self: start; }
+.okline svg { width: 18px; height: 18px; }
+@media (max-width: 980px) { .imp { grid-template-columns: minmax(0, 1fr); } }
+[dir="rtl"] .flow svg { transform: scaleX(-1); }
+/* на телефоне стрелка смотрит вниз — и при письме справа налево тоже */
+@media (max-width: 620px) { .conv { grid-template-columns: minmax(0, 1fr); } .flow { justify-self: center; transform: rotate(90deg); } [dir="rtl"] .flow svg { transform: none; } }
+
+/* устройства */
+.devices { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; }
+.dev { padding: 26px; display: grid; gap: 12px; align-content: start; }
+.dev .shape { height: 120px; display: grid; place-items: end center; margin-bottom: 6px; }
+.dev .shape div { background: var(--well); border-radius: 12px; box-shadow: inset 3px 3px 7px var(--shade), inset -3px -3px 7px var(--glow); display: grid; gap: 6px; padding: 10px; align-content: start; }
+.dev .shape span { display: block; height: 8px; border-radius: 4px; background: color-mix(in srgb, var(--accent) 30%, var(--line)); }
+.dev .shape span.a { background: var(--accent); width: 60%; }
+.dev p { color: var(--muted); }
+@media (max-width: 860px) { .devices { grid-template-columns: minmax(0, 1fr); } }
+
+/* тарифы */
+.plans { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 22px; }
+.plan { padding: 26px; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.plan .stamp { align-self: flex-start; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--muted); border: 1.5px dashed var(--line); padding: 4px 8px; border-radius: 8px; }
+.plan h3 { font: 800 calc(34px * var(--hs) + 6px * (1 - var(--hs)))/1 var(--fd); }
+.plan .for { color: var(--muted); min-height: 3em; }
+.price { padding: 14px; border-radius: 16px; background: var(--well); box-shadow: inset 3px 3px 6px var(--shade), inset -3px -3px 6px var(--glow); display: grid; gap: 2px; }
+.price b { font: 800 36px/1 'Sofia Sans Extra Condensed', 'Arial Narrow', sans-serif; color: var(--muted); letter-spacing: .04em; }
+.price span { font-size: 14px; color: var(--muted); }
+.plan ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.plan li { display: flex; gap: 10px; align-items: flex-start; }
+.plan li svg { width: 20px; height: 20px; color: var(--ok); margin-top: 2px; }
+.plan .btn { width: 100%; margin-top: auto; }
+@media (max-width: 1080px) { .plans { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 600px) { .plans { grid-template-columns: minmax(0, 1fr); } .plan .for { min-height: 0; } }
+
+/* вопросы */
+.faq { display: grid; gap: 16px; max-width: 860px; }
+details { padding: 6px 24px; }
+summary { cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center; gap: 16px; padding-block: 16px; font-weight: 700; font-size: 17px; }
+summary::-webkit-details-marker { display: none; }
+summary::after { content: "+"; font: 400 26px/1 var(--fb); color: var(--accent); transition: transform .2s ease; }
+details[open] summary::after { transform: rotate(45deg); }
+details p { color: var(--muted); padding-bottom: 18px; max-width: 70ch; }
+
+/* финал */
+.end { border-radius: 34px; padding: clamp(32px, 6vw, 64px); color: #fff; background: linear-gradient(150deg, var(--accent), var(--accent2));
+  box-shadow: 0 22px 44px color-mix(in srgb, var(--accent) 30%, transparent); display: grid; gap: 18px; justify-items: start; }
+.end h2 { color: #fff; }
+.end p { opacity: .9; font-size: 18px; max-width: 56ch; }
+.end .btn { background: #fff; color: #0f1b2d; box-shadow: 0 10px 22px rgba(0,0,0,.18); }
+.contact { margin-top: 22px; padding: 18px 22px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+footer { padding-block: 36px 48px; color: var(--muted); font-size: 14px; }
+footer .wrap { display: flex; flex-wrap: wrap; gap: 10px 24px; justify-content: space-between; }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-route" viewBox="0 0 24 24"><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="6" r="2.5"/><path d="M8.5 18H15a3 3 0 0 0 0-6H9a3 3 0 0 1 0-6h6.5"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/></symbol>
+  <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></symbol>
+  <symbol id="i-case" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M3 13h18"/></symbol>
+  <symbol id="i-factory" viewBox="0 0 24 24"><path d="M3 21V10l5 3v-3l5 3V7h3l.8-3h1.4L19 7v14z"/><path d="M7 17h2M12 17h2M3 21h18"/></symbol>
+  <symbol id="i-building" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="1.5"/><path d="M9 7h2M13 7h2M9 11h2M13 11h2M9 15h2M13 15h2M10 21v-3h4v3"/></symbol>
+  <symbol id="i-cap" viewBox="0 0 24 24"><path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11v5c3 2 9 2 12 0v-5M22 9v6"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+  <symbol id="i-cal" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></symbol>
+  <symbol id="i-map" viewBox="0 0 24 24"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14a5 5 0 0 1 5.5 5"/></symbol>
+  <symbol id="i-chat" viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 9.5h8M8 12.5h5"/></symbol>
+  <symbol id="i-list" viewBox="0 0 24 24"><path d="M10 6h10M10 12h10M10 18h10"/><path d="M3.5 6l1.3 1.3L7.5 4.6M3.5 12l1.3 1.3 2.7-2.7M3.5 18l1.3 1.3 2.7-2.7"/></symbol>
+  <symbol id="i-contrast" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v18a9 9 0 0 0 0-18z" fill="currentColor"/></symbol>
+  <symbol id="i-monitor" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></symbol>
+  <symbol id="i-tablet" viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2.5"/><path d="M11 18h2"/></symbol>
+  <symbol id="i-phone" viewBox="0 0 24 24"><rect x="7" y="2" width="10" height="20" rx="2.5"/><path d="M11 18h2"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+  <symbol id="i-call" viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+  <symbol id="i-mega" viewBox="0 0 24 24"><path d="M3 11v2a1 1 0 0 0 1 1h3l6 4V6L7 10H4a1 1 0 0 0-1 1z"/><path d="M17 9a4 4 0 0 1 0 6M19.5 6.5a7.5 7.5 0 0 1 0 11"/></symbol>
+  <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3.5 6.5L12 13l8.5-6.5"/></symbol>
+</svg>
+
+<div class="notice"><div class="wrap"><b></b><span data-i="notice"></span></div></div>
+
+<header>
+  <div class="wrap">
+    <a class="logo" href="#top"><i><svg class="i"><use href="#i-route"/></svg></i><span>GTT Platform</span></a>
+    <nav>
+      <a href="#features" data-i="nav_features"></a>
+      <a href="#how" data-i="nav_how"></a>
+      <a href="#pricing" data-i="nav_pricing"></a>
+      <a href="#faq" data-i="nav_faq"></a>
+    </nav>
+    <div class="tools">
+      <label class="sel"><svg class="i"><use href="#i-globe"/></svg>
+        <select id="lang" data-i-aria="lang">
+          <option value="ru">Русский</option><option value="en">English</option><option value="zh">中文</option>
+          <option value="kk">Қазақша</option><option value="ar">العربية</option><option value="hi">हिन्दी</option>
+        </select>
+      </label>
+      <button class="iconbtn" id="theme" type="button" data-i-aria="theme"><svg class="i sun"><use href="#i-sun"/></svg><svg class="i moon"><use href="#i-moon"/></svg></button>
+      <a class="btn primary" href="../org"><span data-i="open"></span></a>
+    </div>
+  </div>
+</header>
+
+<main id="top">
+  <section class="hero">
+    <div class="wrap">
+      <div class="hero-text">
+        <span class="kicker" data-i="kicker"></span>
+        <h1 data-i="h1"></h1>
+        <p class="lead" data-i="lead"></p>
+        <div class="cta-row">
+          <a class="btn primary" href="../org?new=1"><span data-i="cta1"></span><svg class="i arr"><use href="#i-arrow"/></svg></a>
+          <a class="btn soft" href="../"><span data-i="cta2"></span></a>
+        </div>
+        <p class="works"><span class="devs"><svg class="i"><use href="#i-monitor"/></svg><svg class="i"><use href="#i-tablet"/></svg><svg class="i"><use href="#i-phone"/></svg></span><span data-i="works"></span></p>
+      </div>
+
+      <div class="stage">
+        <div class="phone" id="phone">
+          <div class="screen">
+            <div class="sbar"><span>9:41</span><span class="isl"></span><span>5G</span></div>
+            <div class="ph-head"><span class="ph-logo"><svg class="i"><use href="#i-route"/></svg></span><span><b data-i="ph_org"></b><small data-i="ph_trip"></small></span></div>
+
+            <div class="scr" data-s="today">
+              <div class="now"><span class="lbl" data-i="ph_now"></span><span class="t">10:00</span><b data-i="ph_ev"></b><span data-i="ph_ev_p"></span></div>
+              <div class="mini"><span class="h" data-i="ph_next"></span>
+                <div class="row"><span class="tm">13:00</span><span class="k" style="background:var(--orange)"></span><span data-i="ph_n1"></span></div>
+                <div class="row"><span class="tm">15:00</span><span class="k" style="background:var(--pb)"></span><span data-i="ph_n2"></span></div>
+                <div class="row"><span class="tm">19:00</span><span class="k" style="background:var(--green)"></span><span data-i="ph_n3"></span></div>
+              </div>
+              <div class="call"><i><svg class="i"><use href="#i-call"/></svg></i><span data-i="ph_call"></span></div>
+            </div>
+
+            <div class="scr" data-s="plan" hidden>
+              <div class="day"><b data-i="ph_d1"></b><span data-i="ph_d1e"></span></div>
+              <div class="day"><b data-i="ph_d2"></b><span data-i="ph_d2e"></span></div>
+              <div class="day"><b data-i="ph_d3"></b><span data-i="ph_d3e"></span></div>
+              <div class="day"><b data-i="ph_d4"></b><span data-i="ph_d4e"></span></div>
+            </div>
+
+            <div class="scr" data-s="people" hidden>
+              <div class="person"><span class="av" style="background:#0f8a6c">ИП</span><span><b data-i="ph_p1"></b><span data-i="ph_p1c"></span></span></div>
+              <div class="person"><span class="av" style="background:#7048e8">ОС</span><span><b data-i="ph_p2"></b><span data-i="ph_p2c"></span></span></div>
+              <div class="person"><span class="av" style="background:#c2255c">ПИ</span><span><b data-i="ph_p3"></b><span data-i="ph_p3c"></span></span></div>
+              <div class="person"><span class="av" style="background:#e8590c">АК</span><span><b data-i="ph_p4"></b><span data-i="ph_p4c"></span></span></div>
+            </div>
+
+            <div class="scr" data-s="chat" hidden>
+              <div class="msg"><small data-i="ph_coord"></small><span data-i="ph_m1"></span></div>
+              <div class="msg me" data-i="ph_m2"></div>
+              <div class="msg"><small data-i="ph_coord"></small><span data-i="ph_m3"></span></div>
+            </div>
+
+            <div class="tabs" role="tablist">
+              <button class="tab" role="tab" aria-selected="true" data-tab="today"><svg class="i"><use href="#i-clock"/></svg><span data-i="t_today"></span></button>
+              <button class="tab" role="tab" aria-selected="false" data-tab="plan"><svg class="i"><use href="#i-cal"/></svg><span data-i="t_plan"></span></button>
+              <button class="tab" role="tab" aria-selected="false" data-tab="people"><svg class="i"><use href="#i-users"/></svg><span data-i="t_people"></span></button>
+              <button class="tab" role="tab" aria-selected="false" data-tab="chat"><svg class="i"><use href="#i-chat"/></svg><span data-i="t_chat"></span></button>
+            </div>
+          </div>
+        </div>
+        <div class="under">
+          <div class="dots" id="dots"></div>
+          <small data-i="brand_try"></small>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="who">
+    <div class="wrap">
+      <div class="sec-head"><h2 data-i="who_h"></h2></div>
+      <div class="grid4">
+        <div class="card clay"><span class="ico"><svg class="i"><use href="#i-case"/></svg></span><h3 data-i="who1_h"></h3><p data-i="who1_p"></p></div>
+        <div class="card clay"><span class="ico"><svg class="i"><use href="#i-factory"/></svg></span><h3 data-i="who2_h"></h3><p data-i="who2_p"></p></div>
+        <div class="card clay"><span class="ico"><svg class="i"><use href="#i-building"/></svg></span><h3 data-i="who3_h"></h3><p data-i="who3_p"></p></div>
+        <div class="card clay"><span class="ico"><svg class="i"><use href="#i-cap"/></svg></span><h3 data-i="who4_h"></h3><p data-i="who4_p"></p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="how">
+    <div class="wrap">
+      <div class="sec-head"><span class="kicker" data-i="nav_how"></span><h2 data-i="how_h"></h2><p data-i="how_sub"></p></div>
+      <div class="steps">
+        <div class="step clay"><span class="n">1</span><h3 data-i="s1_h"></h3><p data-i="s1_p"></p></div>
+        <div class="step clay"><span class="n">2</span><h3 data-i="s2_h"></h3><p data-i="s2_p"></p></div>
+        <div class="step clay"><span class="n">3</span><h3 data-i="s3_h"></h3><p data-i="s3_p"></p></div>
+        <div class="step clay"><span class="n">4</span><h3 data-i="s4_h"></h3><p data-i="s4_p"></p></div>
+      </div>
+      <div class="steps-foot"><a class="btn soft" href="../org?new=1&amp;step=programs"><span data-i="how_btn"></span><svg class="i arr"><use href="#i-arrow"/></svg></a></div>
+    </div>
+  </section>
+
+  <section id="import">
+    <div class="wrap imp">
+      <div class="imp-text">
+        <h2 data-i="imp_h"></h2>
+        <p data-i="imp_p"></p>
+        <div class="files">
+          <span class="file"><i style="background:#1d6f42">XLSX</i>Excel</span>
+          <span class="file"><i style="background:#5b6576">CSV</i>CSV</span>
+          <span class="file"><i style="background:#2b5797">DOCX</i>Word</span>
+          <span class="file"><i style="background:#c5321b">PDF</i>PDF</span>
+          <span class="file"><i style="background:var(--violet)">✎</i><span data-i="manual"></span></span>
+        </div>
+        <p class="imp-note" data-i="imp_note"></p>
+      </div>
+      <div class="conv">
+        <div class="doc">
+          <div class="fn"><i>DOCX</i>program.docx</div>
+          <p class="dh" data-i="imp_raw1"></p>
+          <p data-i="imp_raw2"></p>
+          <p data-i="imp_raw3"></p>
+          <p class="dh" data-i="imp_raw4"></p>
+          <p data-i="imp_raw5"></p>
+        </div>
+        <span class="flow"><svg class="i"><use href="#i-arrow"/></svg></span>
+        <div class="parsed clay">
+          <span class="dh" data-i="ph_d1"></span>
+          <div class="ev"><b>14:00</b><span data-x="imp_raw2"></span><span class="kind" style="background:color-mix(in srgb, var(--violet) 16%, transparent);color:var(--violet)" data-i="k_move"></span></div>
+          <div class="ev"><b>19:30</b><span data-x="imp_raw3"></span><span class="kind" style="background:color-mix(in srgb, var(--orange) 16%, transparent);color:var(--orange)" data-i="k_meal"></span></div>
+          <span class="dh" data-i="ph_d2"></span>
+          <div class="ev"><b>10:00</b><span data-x="imp_raw5"></span><span class="kind" style="background:var(--accentSoft);color:var(--accentInk)" data-i="k_co"></span></div>
+          <span class="okline"><svg class="i"><use href="#i-check"/></svg><span data-i="imp_ok"></span></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="features">
+    <div class="wrap">
+      <div class="sec-head"><span class="kicker" data-i="nav_features"></span><h2 data-i="f_h"></h2></div>
+      <div class="grid4">
+        <div class="card clay"><span class="ico"><svg class="i"><use href="#i-clock"/></svg></span><h3 data-i="f1_h"></h3><p data-i="f1_p"></p></div>
+        <div class="card clay"><span class="ico"><svg class="i"><use href="#i-cal"/></svg></span><h3 data-i="f2_h"></h3><p data-i="f2_p"></p></div>
+        <div class="card clay"><span class="ico"><svg class="i"><use href="#i-map"/></svg></span><h3 data-i="f3_h"></h3><p data-i="f3_p"></p></div>
+        <div class="card clay"><span class="ico"><svg class="i"><use href="#i-users"/></svg></span><h3 data-i="f4_h"></h3><p data-i="f4_p"></p></div>
+        <div class="card clay"><span class="ico"><svg class="i"><use href="#i-chat"/></svg></span><h3 data-i="f5_h"></h3><p data-i="f5_p"></p></div>
+        <div class="card clay"><span class="ico"><svg class="i"><use href="#i-list"/></svg></span><h3 data-i="f6_h"></h3><p data-i="f6_p"></p></div>
+        <div class="card clay"><span class="ico"><svg class="i"><use href="#i-globe"/></svg></span><h3 data-i="f7_h"></h3><p data-i="f7_p"></p></div>
+        <div class="card clay"><span class="ico"><svg class="i"><use href="#i-contrast"/></svg></span><h3 data-i="f8_h"></h3><p data-i="f8_p"></p></div>
+        <div class="card clay"><span class="ico"><svg class="i"><use href="#i-mega"/></svg></span><h3 data-i="f9_h"></h3><p data-i="f9_p"></p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="devices">
+    <div class="wrap">
+      <div class="sec-head"><h2 data-i="d_h"></h2></div>
+      <div class="devices">
+        <div class="dev clay"><div class="shape"><div style="width:190px;height:112px;grid-template-columns:44px 1fr 34px;align-items:start"><span class="a" style="width:100%;height:60px"></span><span style="height:80px"></span><span class="a" style="width:100%;height:60px"></span></div></div><h3 data-i="d1_h"></h3><p data-i="d1_p"></p></div>
+        <div class="dev clay"><div class="shape"><div style="width:120px;height:112px;grid-template-columns:1fr 28px"><span style="height:76px"></span><span class="a" style="width:100%;height:52px"></span></div></div><h3 data-i="d2_h"></h3><p data-i="d2_p"></p></div>
+        <div class="dev clay"><div class="shape"><div style="width:60px;height:112px;border-radius:14px"><span class="a" style="width:100%;height:30px"></span><span></span><span></span></div></div><h3 data-i="d3_h"></h3><p data-i="d3_p"></p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="pricing">
+    <div class="wrap">
+      <div class="sec-head"><span class="kicker" data-i="nav_pricing"></span><h2 data-i="p_h"></h2><p data-i="p_sub"></p></div>
+      <div class="plans">
+        <div class="plan clay"><span class="stamp" data-i="draft"></span><h3 data-i="p1_h"></h3><p class="for" data-i="p1_p"></p>
+          <div class="price"><b>—</b><span data-i="price_tbd"></span></div>
+          <ul><li><svg class="i"><use href="#i-check"/></svg><span data-i="p1_f1"></span></li><li><svg class="i"><use href="#i-check"/></svg><span data-i="p1_f2"></span></li><li><svg class="i"><use href="#i-check"/></svg><span data-i="p1_f3"></span></li><li><svg class="i"><use href="#i-check"/></svg><span data-i="p1_f4"></span></li></ul>
+          <a class="btn soft" href="#contact"><span data-i="p_btn"></span></a></div>
+        <div class="plan clay"><span class="stamp" data-i="draft"></span><h3 data-i="p2_h"></h3><p class="for" data-i="p2_p"></p>
+          <div class="price"><b>—</b><span data-i="price_tbd"></span></div>
+          <ul><li><svg class="i"><use href="#i-check"/></svg><span data-i="p2_f1"></span></li><li><svg class="i"><use href="#i-check"/></svg><span data-i="p2_f2"></span></li><li><svg class="i"><use href="#i-check"/></svg><span data-i="p2_f3"></span></li><li><svg class="i"><use href="#i-check"/></svg><span data-i="p2_f4"></span></li></ul>
+          <a class="btn soft" href="#contact"><span data-i="p_btn"></span></a></div>
+        <div class="plan clay"><span class="stamp" data-i="draft"></span><h3 data-i="p3_h"></h3><p class="for" data-i="p3_p"></p>
+          <div class="price"><b>—</b><span data-i="price_tbd"></span></div>
+          <ul><li><svg class="i"><use href="#i-check"/></svg><span data-i="p3_f1"></span></li><li><svg class="i"><use href="#i-check"/></svg><span data-i="p3_f2"></span></li><li><svg class="i"><use href="#i-check"/></svg><span data-i="p3_f3"></span></li><li><svg class="i"><use href="#i-check"/></svg><span data-i="p3_f4"></span></li></ul>
+          <a class="btn soft" href="#contact"><span data-i="p_btn"></span></a></div>
+        <div class="plan clay"><span class="stamp" data-i="draft"></span><h3 data-i="p4_h"></h3><p class="for" data-i="p4_p"></p>
+          <div class="price"><b>—</b><span data-i="price_req"></span></div>
+          <ul><li><svg class="i"><use href="#i-check"/></svg><span data-i="p4_f1"></span></li><li><svg class="i"><use href="#i-check"/></svg><span data-i="p4_f2"></span></li><li><svg class="i"><use href="#i-check"/></svg><span data-i="p4_f3"></span></li></ul>
+          <a class="btn soft" href="#contact"><span data-i="p_btn"></span></a></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="faq">
+    <div class="wrap">
+      <div class="sec-head"><h2 data-i="q_h"></h2></div>
+      <div class="faq">
+        <details class="clay"><summary data-i="q1"></summary><p data-i="a1"></p></details>
+        <details class="clay"><summary data-i="q2"></summary><p data-i="a2"></p></details>
+        <details class="clay"><summary data-i="q3"></summary><p data-i="a3"></p></details>
+        <details class="clay"><summary data-i="q4"></summary><p data-i="a4"></p></details>
+      </div>
+    </div>
+  </section>
+
+  <section id="contact">
+    <div class="wrap">
+      <div class="end">
+        <h2 data-i="end_h"></h2>
+        <p data-i="end_p"></p>
+        <a class="btn" href="../org?new=1&amp;step=programs"><span data-i="open"></span><svg class="i arr"><use href="#i-arrow"/></svg></a>
+      </div>
+      <div class="contact clay"><svg class="i"><use href="#i-mail"/></svg><span data-i="contact"></span></div>
+    </div>
+  </section>
+</main>
+
+<footer><div class="wrap"><span>GTT Platform · <span data-i="foot"></span></span><span data-i="notice"></span></div></footer>
+
+<script>
+const T = {
+ru: {
+  title: 'GTT Platform — приложение поездки под вашим брендом',
+  notice: 'Макет страницы. Название платформы, тарифы и цены — в работе.',
+  nav_features: 'Возможности', nav_how: 'Как это работает', nav_pricing: 'Тарифы', nav_faq: 'Вопросы',
+  open: 'Открыть кабинет', theme: 'Светлая или тёмная тема', lang: 'Язык',
+  kicker: 'Для организаторов деловых поездок',
+  h1: 'Приложение поездки *под вашим брендом*',
+  lead: 'Участники видят программу, маршрут, группу и чат в телефоне. Вы загружаете программу из Excel, Word или PDF, проверяете и отправляете код приглашения.',
+  cta1: 'Создать кабинет', cta2: 'Глазами участника',
+  works: 'Работает в браузере на компьютере, планшете и телефоне.',
+  brand_try: 'Выберите цвет бренда и нажимайте на вкладки телефона',
+  who_h: 'Для кого',
+  who1_h: 'Турагентства и DMC', who1_p: 'Деловые туры и инсентив-поездки: одно приложение вместо десятка рассылок в мессенджерах.',
+  who2_h: 'Бизнес-миссии', who2_p: 'Визиты на заводы и встречи с компаниями: программа, адреса и люди — в одном месте.',
+  who3_h: 'Корпоративные поездки', who3_p: 'Выездные мероприятия, конференции и поездки партнёров — под брендом вашей компании.',
+  who4_h: 'Бизнес-школы и вузы', who4_p: 'Учебные поездки и стажировки: расписание, материалы и группа.',
+  how_h: 'Четыре шага до приглашения', how_sub: 'Все шаги открыты сразу — начать можно с любого, например с загрузки программы.',
+  s1_h: 'Бренд', s1_p: 'Логотип, цвет и координатор. Приложение сразу выглядит как ваше.',
+  s2_h: 'Программа', s2_p: 'Excel, Word, PDF или вручную. Дни, время и места попадают в редактор на проверку.',
+  s3_h: 'Участники', s3_p: 'Список из Excel или по одному. Видно, кто получил приглашение и кто уже в поездке.',
+  s4_h: 'Приглашение', s4_p: 'Код, ссылка и QR-код. Участник открывает поездку в браузере или в приложении.',
+  how_btn: 'Сразу загрузить программу',
+  imp_h: 'Программа из файла, который уже есть',
+  imp_p: 'Загрузите программу в том виде, в каком она у вас лежит. Кабинет найдёт дни, время, места и тип события — вы проверите и поправите.',
+  imp_raw1: 'День 1 — Шанхай', imp_raw2: '14:00 Прилёт и трансфер в отель', imp_raw3: '19:30 Приветственный ужин', imp_raw4: 'День 2 — Шанхай', imp_raw5: '10:00 Завод «Пример Электроникс»',
+  imp_ok: 'Распознано: 2 дня · 3 события', k_move: 'Переезд', k_meal: 'Еда', k_co: 'Визит',
+  imp_note: 'Старые .xls и .doc — пересохраните в новом формате. Шаблон Excel — в кабинете.', manual: 'Вручную',
+  f_h: 'Что получает участник',
+  f1_h: 'Сегодня', f1_p: 'Что сейчас, что дальше и кнопка связи с координатором.',
+  f2_h: 'План по дням', f2_p: 'Все дни поездки: время, место и тип события.',
+  f3_h: 'Маршрут', f3_p: 'Города поездки на карте.',
+  f4_h: 'Группа', f4_p: 'Кто едет и из каких компаний — знакомства ещё до вылета.',
+  f5_h: 'Чат', f5_p: 'Объявления координатора и вопросы группы.',
+  f6_h: 'Подготовка', f6_p: 'Памятка по стране: валюта, связь, нужные приложения.',
+  f7_h: '6 языков', f7_p: 'Русский, English, 中文, Қазақша, العربية, हिन्दी — язык выбирают при первом запуске.',
+  f8_h: 'Светлая и тёмная тема', f8_p: 'Как в системе или на выбор — в приложении и в кабинете.',
+  d_h: 'С любого устройства',
+  d1_h: 'Компьютер', d1_p: 'Кабинет с меню шагов и живым предпросмотром телефона.',
+  d2_h: 'Планшет', d2_p: 'Те же шаги, телефон сбоку: переключайте разделы и смотрите результат.',
+  d3_h: 'Телефон', d3_p: 'Приложение участника и быстрый конструктор бренда.',
+  p_h: 'Тарифы', p_sub: 'Заготовка: состав тарифов и цены обсуждаем.',
+  draft: 'заготовка', price_tbd: 'цена уточняется', price_req: 'по запросу',
+  p1_h: 'Пробный', p1_p: 'Посмотреть на своей группе', p1_f1: '1 поездка', p1_f2: 'до [уточнить] участников', p1_f3: 'загрузка из Excel, Word и PDF',
+  p2_h: 'За поездку', p2_p: 'Для тех, кто возит группы время от времени', p2_f1: 'оплата за одну поездку', p2_f2: 'ваш логотип и цвет', p2_f3: 'код, ссылка и QR для группы',
+  p3_h: 'Годовой', p3_p: 'Для агентств с регулярными выездами', p3_f1: 'поездки весь год', p3_f2: '[уточнить] координаторов', p3_f3: 'все программы в одном кабинете',
+  p4_h: 'Своё приложение', p4_p: 'Отдельное приложение под вашим именем', p4_f1: 'App Store и Google Play', p4_f2: 'веб-версия на вашем домене', p4_f3: '[уточнить] сроки и условия',
+  p_btn: 'Обсудить',
+  q_h: 'Вопросы',
+  q1: 'Участникам нужно что-то устанавливать?', a1: 'Поездка открывается по ссылке в браузере. Приложения в App Store и Google Play — [уточнить: сроки публикации].',
+  q2: 'На каких языках работает приложение?', a2: 'Русский, английский, китайский, казахский, арабский и хинди. Язык выбирают при первом запуске и меняют в настройках. Текст программы остаётся на языке организатора.',
+  q3: 'Как попробовать?', a3: 'Откройте кабинет: создайте организатора, загрузите свою программу или возьмите пример — и посмотрите поездку глазами участника.',
+  end_h: 'Посмотрите на своей программе', end_p: 'Загрузите Excel, Word или PDF и сразу увидите поездку глазами участника.',
+  contact: 'Связаться: [уточнить: почта и телефон для заявок]',
+  foot: 'рабочее название платформы · © 2026',
+  ph_org: 'Ваша компания', ph_trip: 'Шанхай и Ханчжоу · 4 дня', ph_now: 'Сейчас', ph_ev: 'Завод «Пример Электроникс»', ph_ev_p: 'Экскурсия по цехам',
+  ph_next: 'Дальше', ph_n1: 'Обед', ph_n2: 'Логистический центр', ph_n3: 'Прогулка по набережной Бунд', ph_call: 'Позвонить координатору',
+  t_today: 'Сегодня', t_plan: 'План', t_people: 'Люди', t_chat: 'Чат',
+  ph_d1: 'День 1 · Шанхай', ph_d1e: 'Прилёт · Брифинг · Ужин', ph_d2: 'День 2 · Шанхай', ph_d2e: 'Завод · Обед · Склад · Бунд',
+  ph_d3: 'День 3 · Ханчжоу', ph_d3e: 'Поезд · Кампус · Чайная церемония', ph_d4: 'День 4 · Ханчжоу', ph_d4e: 'Итоговая встреча · Вылет',
+  ph_p1: 'Иван Петров', ph_p1c: 'Пример Ритейл', ph_p2: 'Ольга Сидорова', ph_p2c: 'Пример Логистика', ph_p3: 'Пётр Иванов', ph_p3c: 'Пример Производство', ph_p4: 'Анна Кузнецова', ph_p4c: 'Пример Инвест',
+  f9_h: "Продажа тура",
+  f9_p: "Страница тура для вашего сайта и баннеры для Instagram, ВКонтакте, Telegram, Facebook и LinkedIn — из той же программы.",
+  p1_f4: "2 страницы тура с баннерами — бесплатно",
+  p2_f4: "страницы тура и баннеры без ограничений",
+  p3_f4: "страницы тура и баннеры без ограничений",
+  q4: "Можно сделать продающую страницу тура?",
+  a4: "Да. В кабинете есть «Продажа тура»: за 6 шагов собирается страница для вашего сайта и баннеры под каждую соцсеть с готовыми текстами постов. 2 страницы — бесплатно, дальше — по подписке.",
+  ph_coord: 'Координатор', ph_m1: 'Доброе утро! Автобус в 9:00 у лобби.', ph_m2: 'Спасибо, будем вовремя!', ph_m3: 'Возьмите паспорт — на завод пускают по списку.',
+},
+en: {
+  title: 'GTT Platform — a trip app under your brand',
+  notice: 'Page mockup. The platform name, plans and prices are in progress.',
+  nav_features: 'Features', nav_how: 'How it works', nav_pricing: 'Pricing', nav_faq: 'FAQ',
+  open: 'Open dashboard', theme: 'Light or dark theme', lang: 'Language',
+  kicker: 'For business trip organizers',
+  h1: 'A trip app *under your brand*',
+  lead: 'Participants get the programme, route, group and chat on their phones. You upload the programme from Excel, Word or PDF, review it and send an invitation code.',
+  cta1: 'Create a dashboard', cta2: 'See it as a participant',
+  works: 'Works in the browser on a computer, tablet and phone.',
+  brand_try: 'Pick a brand colour and tap the phone tabs',
+  who_h: "Who it's for",
+  who1_h: 'Travel agencies and DMCs', who1_p: 'Business tours and incentive trips: one app instead of a dozen messenger threads.',
+  who2_h: 'Business missions', who2_p: 'Factory visits and company meetings: programme, addresses and people in one place.',
+  who3_h: 'Corporate travel', who3_p: "Off-sites, conferences and partner trips — under your company's brand.",
+  who4_h: 'Business schools and universities', who4_p: 'Study trips and internships: schedule, materials and the group.',
+  how_h: 'Four steps to the invitation', how_sub: 'All steps are open from the start — begin anywhere, for example by uploading the programme.',
+  s1_h: 'Brand', s1_p: 'Logo, colour and coordinator. The app looks like yours right away.',
+  s2_h: 'Programme', s2_p: 'Excel, Word, PDF or by hand. Days, times and places land in the editor for review.',
+  s3_h: 'Participants', s3_p: 'A list from Excel or one by one. See who got the invitation and who has joined.',
+  s4_h: 'Invitation', s4_p: 'Code, link and QR code. Participants open the trip in the browser or in the app.',
+  how_btn: 'Upload a programme now',
+  imp_h: 'A programme from the file you already have',
+  imp_p: 'Upload the programme as it is. The dashboard finds days, times, places and event types — you check and adjust.',
+  imp_raw1: 'Day 1 — Shanghai', imp_raw2: '14:00 Arrival and hotel transfer', imp_raw3: '19:30 Welcome dinner', imp_raw4: 'Day 2 — Shanghai', imp_raw5: '10:00 “Example Electronics” factory',
+  imp_ok: 'Recognised: 2 days · 3 events', k_move: 'Transfer', k_meal: 'Meal', k_co: 'Visit',
+  imp_note: 'Old .xls and .doc files — re-save them in the new format. An Excel template is in the dashboard.', manual: 'By hand',
+  f_h: 'What participants get',
+  f1_h: 'Today', f1_p: "What's on now, what's next, and a button to reach the coordinator.",
+  f2_h: 'Day-by-day plan', f2_p: 'Every day of the trip: time, place and event type.',
+  f3_h: 'Route', f3_p: "The trip's cities on a map.",
+  f4_h: 'Group', f4_p: "Who's going and from which companies — meet before departure.",
+  f5_h: 'Chat', f5_p: 'Coordinator announcements and group questions.',
+  f6_h: 'Preparation', f6_p: 'Country guide: currency, connectivity, useful apps.',
+  f7_h: '6 languages', f7_p: 'Русский, English, 中文, Қазақша, العربية, हिन्दी — chosen on first launch.',
+  f8_h: 'Light and dark theme', f8_p: 'Follow the system or choose — in the app and in the dashboard.',
+  d_h: 'From any device',
+  d1_h: 'Computer', d1_p: 'The dashboard with a step menu and a live phone preview.',
+  d2_h: 'Tablet', d2_p: 'The same steps with the phone alongside: switch sections and see the result.',
+  d3_h: 'Phone', d3_p: 'The participant app and a quick brand builder.',
+  p_h: 'Pricing', p_sub: 'Draft: plan contents and prices are under discussion.',
+  draft: 'draft', price_tbd: 'price to be confirmed', price_req: 'on request',
+  p1_h: 'Trial', p1_p: 'Try it with your own group', p1_f1: '1 trip', p1_f2: 'up to [TBC] participants', p1_f3: 'upload from Excel, Word and PDF',
+  p2_h: 'Per trip', p2_p: 'For occasional group travel', p2_f1: 'pay for one trip', p2_f2: 'your logo and colour', p2_f3: 'code, link and QR for the group',
+  p3_h: 'Annual', p3_p: 'For agencies with regular departures', p3_f1: 'trips all year round', p3_f2: '[TBC] coordinators', p3_f3: 'all programmes in one dashboard',
+  p4_h: 'Your own app', p4_p: 'A separate app under your name', p4_f1: 'App Store and Google Play', p4_f2: 'web version on your domain', p4_f3: '[TBC] timing and terms',
+  p_btn: 'Discuss',
+  q_h: 'Questions',
+  q1: 'Do participants need to install anything?', a1: 'The trip opens from a link in the browser. Apps in the App Store and Google Play — [TBC: release dates].',
+  q2: 'Which languages does the app support?', a2: "Russian, English, Chinese, Kazakh, Arabic and Hindi. The language is chosen on first launch and can be changed in settings. The programme text stays in the organizer's language.",
+  q3: 'How can I try it?', a3: "Open the dashboard: create an organizer, upload your programme or take the example — and see the trip through a participant's eyes.",
+  end_h: 'See it with your own programme', end_p: 'Upload Excel, Word or PDF and instantly see the trip as a participant.',
+  contact: 'Contact: [TBC: email and phone for enquiries]',
+  foot: 'working name of the platform · © 2026',
+  ph_org: 'Your company', ph_trip: 'Shanghai & Hangzhou · 4 days', ph_now: 'Now', ph_ev: '“Example Electronics” factory', ph_ev_p: 'Tour of the workshops',
+  ph_next: 'Next', ph_n1: 'Lunch', ph_n2: 'Logistics centre', ph_n3: 'Walk along the Bund', ph_call: 'Call the coordinator',
+  t_today: 'Today', t_plan: 'Plan', t_people: 'People', t_chat: 'Chat',
+  ph_d1: 'Day 1 · Shanghai', ph_d1e: 'Arrival · Briefing · Dinner', ph_d2: 'Day 2 · Shanghai', ph_d2e: 'Factory · Lunch · Warehouse · The Bund',
+  ph_d3: 'Day 3 · Hangzhou', ph_d3e: 'Train · Campus · Tea ceremony', ph_d4: 'Day 4 · Hangzhou', ph_d4e: 'Wrap-up meeting · Departure',
+  ph_p1: 'Ivan Petrov', ph_p1c: 'Example Retail', ph_p2: 'Olga Sidorova', ph_p2c: 'Example Logistics', ph_p3: 'Pyotr Ivanov', ph_p3c: 'Example Manufacturing', ph_p4: 'Anna Kuznetsova', ph_p4c: 'Example Invest',
+  f9_h: "Tour sales",
+  f9_p: "A tour page for your website and banners for Instagram, VK, Telegram, Facebook and LinkedIn — from the same programme.",
+  p1_f4: "2 tour pages with banners — free",
+  p2_f4: "unlimited tour pages and banners",
+  p3_f4: "unlimited tour pages and banners",
+  q4: "Can I make a page to sell the tour?",
+  a4: "Yes. The dashboard has “Tour sales”: in 6 steps you get a page for your website and banners for every social network with ready post texts. 2 pages are free, then by subscription.",
+  ph_coord: 'Coordinator', ph_m1: 'Good morning! The bus leaves at 9:00 from the lobby.', ph_m2: "Thanks, we'll be on time!", ph_m3: 'Bring your passport — factory entry is by list.',
+},
+zh: {
+  title: 'GTT Platform — 以您的品牌呈现的行程应用',
+  notice: '页面样稿。平台名称、套餐和价格仍在制定中。',
+  nav_features: '功能', nav_how: '使用流程', nav_pricing: '套餐', nav_faq: '常见问题',
+  open: '打开管理后台', theme: '浅色或深色主题', lang: '语言',
+  kicker: '面向商务出行组织者',
+  h1: '*以您的品牌*呈现的行程应用',
+  lead: '参与者在手机上查看行程安排、路线、团队成员和聊天。您从 Excel、Word 或 PDF 上传行程，核对后发送邀请码。',
+  cta1: '创建管理后台', cta2: '以参与者视角查看',
+  works: '可在电脑、平板和手机的浏览器中使用。',
+  brand_try: '选择品牌颜色，并点击手机上的标签',
+  who_h: '适用对象',
+  who1_h: '旅行社和地接社（DMC）', who1_p: '商务考察和奖励旅游：一个应用代替十几个聊天群通知。',
+  who2_h: '商务考察团', who2_p: '工厂参观和企业会面：日程、地址和人员集中在一处。',
+  who3_h: '企业出行', who3_p: '外出活动、会议和合作伙伴出行——使用贵公司的品牌。',
+  who4_h: '商学院和高校', who4_p: '游学和实习：日程、资料和团队。',
+  how_h: '四步发出邀请', how_sub: '所有步骤一开始就开放——可以从任意一步开始，比如直接上传行程。',
+  s1_h: '品牌', s1_p: '标志、颜色和协调人。应用立刻呈现您的样子。',
+  s2_h: '行程', s2_p: 'Excel、Word、PDF 或手动录入。日期、时间和地点进入编辑器供您核对。',
+  s3_h: '参与者', s3_p: '从 Excel 导入名单或逐个添加。谁收到了邀请、谁已加入，一目了然。',
+  s4_h: '邀请', s4_p: '邀请码、链接和二维码。参与者可在浏览器或应用中打开行程。',
+  how_btn: '直接上传行程',
+  imp_h: '用现有文件生成行程',
+  imp_p: '按原样上传行程文件。后台会识别日期、时间、地点和活动类型——您只需核对和调整。',
+  imp_raw1: '第1天 — 上海', imp_raw2: '14:00 抵达并前往酒店', imp_raw3: '19:30 欢迎晚宴', imp_raw4: '第2天 — 上海', imp_raw5: '10:00 “示例电子”工厂',
+  imp_ok: '已识别：2天 · 3项活动', k_move: '交通', k_meal: '用餐', k_co: '参观',
+  imp_note: '旧版 .xls 和 .doc 文件请另存为新格式。Excel 模板可在后台下载。', manual: '手动录入',
+  f_h: '参与者能获得什么',
+  f1_h: '今天', f1_p: '正在进行什么、接下来是什么，以及联系协调人的按钮。',
+  f2_h: '每日安排', f2_p: '行程的每一天：时间、地点和活动类型。',
+  f3_h: '路线', f3_p: '地图上的行程城市。',
+  f4_h: '团队', f4_p: '谁同行、来自哪些公司——出发前就能认识。',
+  f5_h: '聊天', f5_p: '协调人公告和团队提问。',
+  f6_h: '行前准备', f6_p: '目的地指南：货币、通信、常用应用。',
+  f7_h: '6种语言', f7_p: 'Русский、English、中文、Қазақша、العربية、हिन्दी——首次启动时选择。',
+  f8_h: '浅色和深色主题', f8_p: '跟随系统或自行选择——应用和后台均可。',
+  d_h: '任何设备都能用',
+  d1_h: '电脑', d1_p: '带步骤菜单和手机实时预览的管理后台。',
+  d2_h: '平板', d2_p: '同样的步骤，手机预览在侧边：切换页面即可查看效果。',
+  d3_h: '手机', d3_p: '参与者应用和快速品牌设置。',
+  p_h: '套餐', p_sub: '草案：套餐内容和价格正在讨论中。',
+  draft: '草案', price_tbd: '价格待定', price_req: '按需报价',
+  p1_h: '试用', p1_p: '用自己的团队体验', p1_f1: '1次行程', p1_f2: '最多 [待定] 名参与者', p1_f3: '支持 Excel、Word 和 PDF 导入',
+  p2_h: '按次', p2_p: '适合偶尔组团出行', p2_f1: '按单次行程付费', p2_f2: '您的标志和颜色', p2_f3: '团队邀请码、链接和二维码',
+  p3_h: '年度', p3_p: '适合定期出团的旅行社', p3_f1: '全年行程', p3_f2: '[待定] 名协调人', p3_f3: '所有行程集中在一个后台',
+  p4_h: '专属应用', p4_p: '以您的名义发布的独立应用', p4_f1: 'App Store 和 Google Play', p4_f2: '您自有域名下的网页版', p4_f3: '[待定] 周期和条件',
+  p_btn: '洽谈',
+  q_h: '常见问题',
+  q1: '参与者需要安装什么吗？', a1: '行程可通过链接在浏览器中打开。App Store 和 Google Play 中的应用——[待定：上架时间]。',
+  q2: '应用支持哪些语言？', a2: '俄语、英语、中文、哈萨克语、阿拉伯语和印地语。首次启动时选择语言，之后可在设置中更改。行程内容保持组织者使用的语言。',
+  q3: '如何试用？', a3: '打开管理后台：创建组织者，上传您的行程或使用示例——然后以参与者视角查看行程。',
+  end_h: '用您自己的行程试试', end_p: '上传 Excel、Word 或 PDF，立即以参与者视角查看行程。',
+  contact: '联系方式：[待定：咨询邮箱和电话]',
+  foot: '平台暂定名称 · © 2026',
+  ph_org: '您的公司', ph_trip: '上海和杭州 · 4天', ph_now: '现在', ph_ev: '“示例电子”工厂', ph_ev_p: '参观生产车间',
+  ph_next: '接下来', ph_n1: '午餐', ph_n2: '物流中心', ph_n3: '漫步外滩', ph_call: '联系协调人',
+  t_today: '今天', t_plan: '日程', t_people: '成员', t_chat: '聊天',
+  ph_d1: '第1天 · 上海', ph_d1e: '抵达 · 简报会 · 晚宴', ph_d2: '第2天 · 上海', ph_d2e: '工厂 · 午餐 · 仓库 · 外滩',
+  ph_d3: '第3天 · 杭州', ph_d3e: '高铁 · 园区 · 茶艺', ph_d4: '第4天 · 杭州', ph_d4e: '总结会 · 返程',
+  ph_p1: '伊万·彼得罗夫', ph_p1c: '示例零售', ph_p2: '奥尔加·西多罗娃', ph_p2c: '示例物流', ph_p3: '彼得·伊万诺夫', ph_p3c: '示例制造', ph_p4: '安娜·库兹涅佐娃', ph_p4c: '示例投资',
+  f9_h: "行程推广",
+  f9_p: "用同一份行程生成网站行程页面，以及 Instagram、VK、Telegram、Facebook、LinkedIn 横幅。",
+  p1_f4: "2 个带横幅的行程页面——免费",
+  p2_f4: "行程页面和横幅不限数量",
+  p3_f4: "行程页面和横幅不限数量",
+  q4: "可以制作推广行程的页面吗？",
+  a4: "可以。后台中的“行程推广”只需 6 步，即可生成网站页面和适配各社交网络的横幅及帖子文案。前 2 个页面免费，之后需订阅。",
+  ph_coord: '协调人', ph_m1: '早上好！大巴9:00在大堂出发。', ph_m2: '谢谢，我们会准时到！', ph_m3: '请携带护照——工厂凭名单入场。',
+},
+kk: {
+  title: 'GTT Platform — сіздің брендіңіздегі сапар қосымшасы',
+  notice: 'Бет макеті. Платформа атауы, тарифтер мен бағалар әзірленуде.',
+  nav_features: 'Мүмкіндіктер', nav_how: 'Қалай жұмыс істейді', nav_pricing: 'Тарифтер', nav_faq: 'Сұрақтар',
+  open: 'Кабинетті ашу', theme: 'Ашық немесе қараңғы режим', lang: 'Тіл',
+  kicker: 'Іскерлік сапарларды ұйымдастырушыларға',
+  h1: '*Сіздің брендіңіздегі* сапар қосымшасы',
+  lead: 'Қатысушылар бағдарламаны, бағытты, топты және чатты телефоннан көреді. Сіз бағдарламаны Excel, Word немесе PDF-тен жүктейсіз, тексересіз және шақыру кодын жібересіз.',
+  cta1: 'Кабинет құру', cta2: 'Қатысушы көзімен',
+  works: 'Компьютерде, планшетте және телефонда браузер арқылы жұмыс істейді.',
+  brand_try: 'Бренд түсін таңдап, телефон қойындыларын басыңыз',
+  who_h: 'Кімге арналған',
+  who1_h: 'Туристік агенттіктер мен DMC', who1_p: 'Іскерлік турлар мен инсентив-сапарлар: мессенджердегі ондаған хабарламаның орнына бір қосымша.',
+  who2_h: 'Бизнес-миссиялар', who2_p: 'Зауыттарға бару және компаниялармен кездесулер: бағдарлама, мекенжайлар және адамдар — бір жерде.',
+  who3_h: 'Корпоративтік сапарлар', who3_p: 'Көшпелі іс-шаралар, конференциялар және серіктестер сапарлары — компанияңыздың брендімен.',
+  who4_h: 'Бизнес-мектептер мен ЖОО', who4_p: 'Оқу сапарлары мен тағылымдамалар: кесте, материалдар және топ.',
+  how_h: 'Шақыруға дейін төрт қадам', how_sub: 'Барлық қадамдар бірден ашық — кез келгенінен бастауға болады, мысалы, бағдарламаны жүктеуден.',
+  s1_h: 'Бренд', s1_p: 'Логотип, түс және үйлестіруші. Қосымша бірден сіздікі сияқты көрінеді.',
+  s2_h: 'Бағдарлама', s2_p: 'Excel, Word, PDF немесе қолмен. Күндер, уақыт және орындар тексеру үшін редакторға түседі.',
+  s3_h: 'Қатысушылар', s3_p: 'Тізім Excel-ден немесе бір-бірлеп. Шақыруды кім алғаны және кім қосылғаны көрінеді.',
+  s4_h: 'Шақыру', s4_p: 'Код, сілтеме және QR-код. Қатысушы сапарды браузерде немесе қосымшада ашады.',
+  how_btn: 'Бағдарламаны бірден жүктеу',
+  imp_h: 'Бағдарлама — қолыңыздағы файлдан',
+  imp_p: 'Бағдарламаны қандай күйде болса, солай жүктеңіз. Кабинет күндерді, уақытты, орындарды және іс-шара түрін табады — сіз тексеріп, түзетесіз.',
+  imp_raw1: '1-күн — Шанхай', imp_raw2: '14:00 Ұшып келу және қонақүйге трансфер', imp_raw3: '19:30 Қарсы алу кешкі асы', imp_raw4: '2-күн — Шанхай', imp_raw5: '10:00 «Мысал Электроникс» зауыты',
+  imp_ok: 'Танылды: 2 күн · 3 іс-шара', k_move: 'Жол', k_meal: 'Тамақ', k_co: 'Визит',
+  imp_note: 'Ескі .xls және .doc файлдарын жаңа форматта қайта сақтаңыз. Excel үлгісі — кабинетте.', manual: 'Қолмен',
+  f_h: 'Қатысушы не алады',
+  f1_h: 'Бүгін', f1_p: 'Қазір не болып жатыр, әрі қарай не және үйлестірушімен байланыс түймесі.',
+  f2_h: 'Күндер бойынша жоспар', f2_p: 'Сапардың барлық күндері: уақыт, орын және іс-шара түрі.',
+  f3_h: 'Бағыт', f3_p: 'Сапар қалалары картада.',
+  f4_h: 'Топ', f4_p: 'Кім барады және қай компаниялардан — ұшар алдында танысу.',
+  f5_h: 'Чат', f5_p: 'Үйлестірушінің хабарландырулары мен топтың сұрақтары.',
+  f6_h: 'Дайындық', f6_p: 'Ел туралы жаднама: валюта, байланыс, қажетті қосымшалар.',
+  f7_h: '6 тіл', f7_p: 'Русский, English, 中文, Қазақша, العربية, हिन्दी — тіл алғашқы іске қосқанда таңдалады.',
+  f8_h: 'Ашық және қараңғы режим', f8_p: 'Жүйедегідей немесе өз таңдауыңыз бойынша — қосымшада да, кабинетте де.',
+  d_h: 'Кез келген құрылғыдан',
+  d1_h: 'Компьютер', d1_p: 'Қадамдар мәзірі және телефонның тірі алдын ала көрінісі бар кабинет.',
+  d2_h: 'Планшет', d2_p: 'Сол қадамдар, телефон қапталда: бөлімдерді ауыстырып, нәтижені көріңіз.',
+  d3_h: 'Телефон', d3_p: 'Қатысушы қосымшасы және жылдам бренд конструкторы.',
+  p_h: 'Тарифтер', p_sub: 'Дайындама: тарифтердің құрамы мен бағасы талқылануда.',
+  draft: 'дайындама', price_tbd: 'бағасы нақтыланады', price_req: 'сұраныс бойынша',
+  p1_h: 'Сынақ', p1_p: 'Өз тобыңызда көріп шығу', p1_f1: '1 сапар', p1_f2: '[нақтылау] қатысушыға дейін', p1_f3: 'Excel, Word және PDF-тен жүктеу',
+  p2_h: 'Бір сапарға', p2_p: 'Топтарды анда-санда апаратындарға', p2_f1: 'бір сапар үшін төлем', p2_f2: 'сіздің логотипіңіз бен түсіңіз', p2_f3: 'топқа код, сілтеме және QR',
+  p3_h: 'Жылдық', p3_p: 'Тұрақты сапарлары бар агенттіктерге', p3_f1: 'жыл бойы сапарлар', p3_f2: '[нақтылау] үйлестіруші', p3_f3: 'барлық бағдарлама бір кабинетте',
+  p4_h: 'Жеке қосымша', p4_p: 'Сіздің атыңыздағы бөлек қосымша', p4_f1: 'App Store және Google Play', p4_f2: 'сіздің доменіңіздегі веб-нұсқа', p4_f3: '[нақтылау] мерзімдер мен шарттар',
+  p_btn: 'Талқылау',
+  q_h: 'Сұрақтар',
+  q1: 'Қатысушыларға бірдеңе орнату керек пе?', a1: 'Сапар браузерде сілтеме арқылы ашылады. App Store және Google Play-дегі қосымшалар — [нақтылау: жариялау мерзімі].',
+  q2: 'Қосымша қандай тілдерде жұмыс істейді?', a2: 'Орыс, ағылшын, қытай, қазақ, араб және хинди. Тіл алғашқы іске қосқанда таңдалады және баптауларда өзгертіледі. Бағдарлама мәтіні ұйымдастырушының тілінде қалады.',
+  q3: 'Қалай байқап көруге болады?', a3: 'Кабинетті ашыңыз: ұйымдастырушы құрыңыз, өз бағдарламаңызды жүктеңіз немесе мысалды алыңыз — және сапарды қатысушы көзімен қараңыз.',
+  end_h: 'Өз бағдарламаңызда көріңіз', end_p: 'Excel, Word немесе PDF жүктеңіз де, сапарды бірден қатысушы көзімен көріңіз.',
+  contact: 'Байланыс: [нақтылау: өтінімдерге арналған пошта мен телефон]',
+  foot: 'платформаның жұмыс атауы · © 2026',
+  ph_org: 'Сіздің компанияңыз', ph_trip: 'Шанхай және Ханчжоу · 4 күн', ph_now: 'Қазір', ph_ev: '«Мысал Электроникс» зауыты', ph_ev_p: 'Цехтар бойынша экскурсия',
+  ph_next: 'Әрі қарай', ph_n1: 'Түскі ас', ph_n2: 'Логистика орталығы', ph_n3: 'Бунд жағалауымен серуен', ph_call: 'Үйлестірушіге қоңырау шалу',
+  t_today: 'Бүгін', t_plan: 'Жоспар', t_people: 'Адамдар', t_chat: 'Чат',
+  ph_d1: '1-күн · Шанхай', ph_d1e: 'Ұшып келу · Брифинг · Кешкі ас', ph_d2: '2-күн · Шанхай', ph_d2e: 'Зауыт · Түскі ас · Қойма · Бунд',
+  ph_d3: '3-күн · Ханчжоу', ph_d3e: 'Пойыз · Кампус · Шай рәсімі', ph_d4: '4-күн · Ханчжоу', ph_d4e: 'Қорытынды кездесу · Ұшу',
+  ph_p1: 'Иван Петров', ph_p1c: 'Мысал Ритейл', ph_p2: 'Ольга Сидорова', ph_p2c: 'Мысал Логистика', ph_p3: 'Пётр Иванов', ph_p3c: 'Мысал Өндіріс', ph_p4: 'Анна Кузнецова', ph_p4c: 'Мысал Инвест',
+  f9_h: "Турды сату",
+  f9_p: "Сол бағдарламадан сайтыңызға тур беті және Instagram, ВКонтакте, Telegram, Facebook пен LinkedIn баннерлері.",
+  p1_f4: "Баннерлері бар 2 тур беті — тегін",
+  p2_f4: "тур беттері мен баннерлер шектеусіз",
+  p3_f4: "тур беттері мен баннерлер шектеусіз",
+  q4: "Турды сататын бет жасауға бола ма?",
+  a4: "Иә. Кабинетте «Турды сату» бар: 6 қадамда сайтыңызға бет және әр әлеуметтік желіге дайын пост мәтіндері бар баннерлер жиналады. 2 бет — тегін, одан әрі — жазылым бойынша.",
+  ph_coord: 'Үйлестіруші', ph_m1: 'Қайырлы таң! Автобус 9:00-де лоббиде.', ph_m2: 'Рақмет, уақытында барамыз!', ph_m3: 'Төлқұжатты алыңыз — зауытқа тізім бойынша кіргізеді.',
+},
+ar: {
+  title: 'GTT Platform — تطبيق الرحلة بعلامتك التجارية',
+  notice: 'نموذج أولي للصفحة. اسم المنصة والباقات والأسعار قيد الإعداد.',
+  nav_features: 'المزايا', nav_how: 'كيف تعمل', nav_pricing: 'الباقات', nav_faq: 'الأسئلة',
+  open: 'فتح لوحة التحكم', theme: 'مظهر فاتح أو داكن', lang: 'اللغة',
+  kicker: 'لمنظمي رحلات الأعمال',
+  h1: 'تطبيق الرحلة *بعلامتك التجارية*',
+  lead: 'يرى المشاركون البرنامج والمسار والمجموعة والدردشة على هواتفهم. أنت ترفع البرنامج من Excel أو Word أو PDF، وتراجعه، ثم ترسل رمز الدعوة.',
+  cta1: 'إنشاء لوحة تحكم', cta2: 'بعين المشارك',
+  works: 'يعمل في المتصفح على الكمبيوتر والجهاز اللوحي والهاتف.',
+  brand_try: 'اختر لون علامتك واضغط على تبويبات الهاتف',
+  who_h: 'لمن هذا',
+  who1_h: 'وكالات السفر وشركات DMC', who1_p: 'رحلات الأعمال والحوافز: تطبيق واحد بدلًا من عشرات الرسائل في تطبيقات المراسلة.',
+  who2_h: 'البعثات التجارية', who2_p: 'زيارات المصانع ولقاءات الشركات: البرنامج والعناوين والأشخاص في مكان واحد.',
+  who3_h: 'رحلات الشركات', who3_p: 'الفعاليات الخارجية والمؤتمرات ورحلات الشركاء — بعلامة شركتك.',
+  who4_h: 'كليات الأعمال والجامعات', who4_p: 'الرحلات الدراسية والتدريب: الجدول والمواد والمجموعة.',
+  how_h: 'أربع خطوات حتى الدعوة', how_sub: 'كل الخطوات مفتوحة من البداية — ابدأ من أي خطوة، مثلًا برفع البرنامج مباشرة.',
+  s1_h: 'العلامة', s1_p: 'الشعار واللون والمنسق. يبدو التطبيق كتطبيقك فورًا.',
+  s2_h: 'البرنامج', s2_p: 'Excel أو Word أو PDF أو يدويًا. تنتقل الأيام والأوقات والأماكن إلى المحرر للمراجعة.',
+  s3_h: 'المشاركون', s3_p: 'قائمة من Excel أو واحدًا تلو الآخر. ترى من استلم الدعوة ومن انضم.',
+  s4_h: 'الدعوة', s4_p: 'رمز ورابط ورمز QR. يفتح المشارك الرحلة في المتصفح أو في التطبيق.',
+  how_btn: 'ارفع البرنامج الآن',
+  imp_h: 'البرنامج من الملف الموجود لديك',
+  imp_p: 'ارفع البرنامج كما هو. تتعرف لوحة التحكم على الأيام والأوقات والأماكن ونوع الفعالية — وأنت تراجع وتعدّل.',
+  imp_raw1: 'اليوم 1 — شنغهاي', imp_raw2: '14:00 الوصول والانتقال إلى الفندق', imp_raw3: '19:30 عشاء الترحيب', imp_raw4: 'اليوم 2 — شنغهاي', imp_raw5: '10:00 مصنع «مثال إلكترونيكس»',
+  imp_ok: 'تم التعرّف: يومان · 3 فعاليات', k_move: 'تنقّل', k_meal: 'وجبة', k_co: 'زيارة',
+  imp_note: 'ملفات ‎.xls و‎.doc القديمة — احفظها بالصيغة الجديدة. قالب Excel متوفر في لوحة التحكم.', manual: 'يدويًا',
+  f_h: 'ما الذي يحصل عليه المشارك',
+  f1_h: 'اليوم', f1_p: 'ما يجري الآن وما التالي، وزر للتواصل مع المنسق.',
+  f2_h: 'الخطة يومًا بيوم', f2_p: 'كل أيام الرحلة: الوقت والمكان ونوع الفعالية.',
+  f3_h: 'المسار', f3_p: 'مدن الرحلة على الخريطة.',
+  f4_h: 'المجموعة', f4_p: 'من المسافرون ومن أي شركات — تعارف قبل السفر.',
+  f5_h: 'الدردشة', f5_p: 'إعلانات المنسق وأسئلة المجموعة.',
+  f6_h: 'الاستعداد', f6_p: 'دليل البلد: العملة والاتصالات والتطبيقات المفيدة.',
+  f7_h: '6 لغات', f7_p: 'Русский وEnglish و中文 وҚазақша والعربية وहिन्दी — تُختار اللغة عند أول تشغيل.',
+  f8_h: 'مظهر فاتح وداكن', f8_p: 'حسب النظام أو باختيارك — في التطبيق ولوحة التحكم.',
+  d_h: 'من أي جهاز',
+  d1_h: 'الكمبيوتر', d1_p: 'لوحة تحكم بقائمة الخطوات ومعاينة حية للهاتف.',
+  d2_h: 'الجهاز اللوحي', d2_p: 'الخطوات نفسها والهاتف إلى الجانب: بدّل الأقسام وشاهد النتيجة.',
+  d3_h: 'الهاتف', d3_p: 'تطبيق المشارك ومصمم سريع للعلامة.',
+  p_h: 'الباقات', p_sub: 'مسودة: محتوى الباقات والأسعار قيد النقاش.',
+  draft: 'مسودة', price_tbd: 'السعر قيد التحديد', price_req: 'عند الطلب',
+  p1_h: 'تجريبية', p1_p: 'جرّبها مع مجموعتك', p1_f1: 'رحلة واحدة', p1_f2: 'حتى [يُحدَّد] مشارك', p1_f3: 'الرفع من Excel وWord وPDF',
+  p2_h: 'لكل رحلة', p2_p: 'لمن ينظم رحلات جماعية من حين لآخر', p2_f1: 'الدفع مقابل رحلة واحدة', p2_f2: 'شعارك ولونك', p2_f3: 'رمز ورابط وQR للمجموعة',
+  p3_h: 'سنوية', p3_p: 'للوكالات ذات الرحلات المنتظمة', p3_f1: 'رحلات طوال العام', p3_f2: '[يُحدَّد] منسقين', p3_f3: 'كل البرامج في لوحة واحدة',
+  p4_h: 'تطبيقك الخاص', p4_p: 'تطبيق مستقل باسمك', p4_f1: 'App Store وGoogle Play', p4_f2: 'نسخة ويب على نطاقك', p4_f3: '[يُحدَّد] المدة والشروط',
+  p_btn: 'لنتناقش',
+  q_h: 'الأسئلة',
+  q1: 'هل يحتاج المشاركون إلى تثبيت شيء؟', a1: 'تُفتح الرحلة عبر رابط في المتصفح. التطبيقات في App Store وGoogle Play — [يُحدَّد: موعد النشر].',
+  q2: 'ما اللغات التي يدعمها التطبيق؟', a2: 'الروسية والإنجليزية والصينية والكازاخية والعربية والهندية. تُختار اللغة عند أول تشغيل ويمكن تغييرها في الإعدادات. يبقى نص البرنامج بلغة المنظِّم.',
+  q3: 'كيف أجرّب؟', a3: 'افتح لوحة التحكم: أنشئ منظِّمًا، وارفع برنامجك أو خذ المثال — وشاهد الرحلة بعين المشارك.',
+  end_h: 'جرّبها على برنامجك', end_p: 'ارفع ملف Excel أو Word أو PDF وشاهد الرحلة فورًا بعين المشارك.',
+  contact: 'للتواصل: [يُحدَّد: البريد والهاتف للطلبات]',
+  foot: 'اسم مؤقت للمنصة · © 2026',
+  ph_org: 'شركتك', ph_trip: 'شنغهاي وهانغتشو · 4 أيام', ph_now: 'الآن', ph_ev: 'مصنع «مثال إلكترونيكس»', ph_ev_p: 'جولة في خطوط الإنتاج',
+  ph_next: 'التالي', ph_n1: 'الغداء', ph_n2: 'مركز لوجستي', ph_n3: 'نزهة على كورنيش البوند', ph_call: 'اتصل بالمنسق',
+  t_today: 'اليوم', t_plan: 'الخطة', t_people: 'الأشخاص', t_chat: 'الدردشة',
+  ph_d1: 'اليوم 1 · شنغهاي', ph_d1e: 'الوصول · الإحاطة · العشاء', ph_d2: 'اليوم 2 · شنغهاي', ph_d2e: 'المصنع · الغداء · المستودع · البوند',
+  ph_d3: 'اليوم 3 · هانغتشو', ph_d3e: 'القطار · الحرم · مراسم الشاي', ph_d4: 'اليوم 4 · هانغتشو', ph_d4e: 'اللقاء الختامي · المغادرة',
+  ph_p1: 'إيفان بيتروف', ph_p1c: 'مثال للتجزئة', ph_p2: 'أولغا سيدوروفا', ph_p2c: 'مثال للوجستيات', ph_p3: 'بيوتر إيفانوف', ph_p3c: 'مثال للتصنيع', ph_p4: 'آنا كوزنيتسوفا', ph_p4c: 'مثال للاستثمار',
+  f9_h: "بيع الرحلة",
+  f9_p: "صفحة للرحلة على موقعك وبانرات لـ Instagram وVK وTelegram وFacebook وLinkedIn — من البرنامج نفسه.",
+  p1_f4: "صفحتان للرحلة مع البانرات — مجانًا",
+  p2_f4: "صفحات رحلات وبانرات بلا حدود",
+  p3_f4: "صفحات رحلات وبانرات بلا حدود",
+  q4: "هل يمكن إنشاء صفحة لبيع الرحلة؟",
+  a4: "نعم. في لوحة التحكم قسم «بيع الرحلة»: في 6 خطوات تحصل على صفحة لموقعك وبانرات لكل شبكة اجتماعية مع نصوص منشورات جاهزة. صفحتان مجانًا، ثم بالاشتراك.",
+  ph_coord: 'المنسق', ph_m1: 'صباح الخير! الحافلة الساعة 9:00 عند الردهة.', ph_m2: 'شكرًا، سنكون في الموعد!', ph_m3: 'خذوا جوازات السفر — الدخول إلى المصنع حسب القائمة.',
+},
+hi: {
+  title: 'GTT Platform — आपके ब्रांड में यात्रा ऐप',
+  notice: 'पेज का मॉकअप। प्लेटफ़ॉर्म का नाम, प्लान और कीमतें अभी तय हो रही हैं।',
+  nav_features: 'सुविधाएँ', nav_how: 'कैसे काम करता है', nav_pricing: 'प्लान', nav_faq: 'सवाल',
+  open: 'डैशबोर्ड खोलें', theme: 'लाइट या डार्क थीम', lang: 'भाषा',
+  kicker: 'बिज़नेस यात्राओं के आयोजकों के लिए',
+  h1: '*आपके ब्रांड में* यात्रा ऐप',
+  lead: 'प्रतिभागी अपने फ़ोन पर कार्यक्रम, रूट, समूह और चैट देखते हैं। आप Excel, Word या PDF से कार्यक्रम अपलोड करते हैं, जाँचते हैं और आमंत्रण कोड भेजते हैं।',
+  cta1: 'डैशबोर्ड बनाएँ', cta2: 'प्रतिभागी की नज़र से',
+  works: 'कंप्यूटर, टैबलेट और फ़ोन के ब्राउज़र में काम करता है।',
+  brand_try: 'ब्रांड का रंग चुनें और फ़ोन के टैब पर टैप करें',
+  who_h: 'किसके लिए',
+  who1_h: 'ट्रैवल एजेंसियाँ और DMC', who1_p: 'बिज़नेस टूर और इंसेंटिव ट्रिप: मैसेंजर के दर्जनों संदेशों की जगह एक ऐप।',
+  who2_h: 'बिज़नेस मिशन', who2_p: 'फ़ैक्टरी विज़िट और कंपनियों से मुलाक़ातें: कार्यक्रम, पते और लोग — एक ही जगह।',
+  who3_h: 'कॉर्पोरेट यात्राएँ', who3_p: 'ऑफ़साइट, कॉन्फ़्रेंस और पार्टनर ट्रिप — आपकी कंपनी के ब्रांड में।',
+  who4_h: 'बिज़नेस स्कूल और विश्वविद्यालय', who4_p: 'शैक्षिक यात्राएँ और इंटर्नशिप: समय-सारिणी, सामग्री और समूह।',
+  how_h: 'आमंत्रण तक चार कदम', how_sub: 'सभी कदम शुरू से खुले हैं — किसी से भी शुरू करें, जैसे सीधे कार्यक्रम अपलोड करके।',
+  s1_h: 'ब्रांड', s1_p: 'लोगो, रंग और समन्वयक। ऐप तुरंत आपका जैसा दिखता है।',
+  s2_h: 'कार्यक्रम', s2_p: 'Excel, Word, PDF या हाथ से। दिन, समय और जगहें जाँच के लिए एडिटर में आती हैं।',
+  s3_h: 'प्रतिभागी', s3_p: 'Excel से सूची या एक-एक करके। दिखता है कि किसे आमंत्रण मिला और कौन जुड़ चुका है।',
+  s4_h: 'आमंत्रण', s4_p: 'कोड, लिंक और QR कोड। प्रतिभागी यात्रा ब्राउज़र या ऐप में खोलते हैं।',
+  how_btn: 'अभी कार्यक्रम अपलोड करें',
+  imp_h: 'जो फ़ाइल पहले से है, उसी से कार्यक्रम',
+  imp_p: 'कार्यक्रम जैसा है वैसा ही अपलोड करें। डैशबोर्ड दिन, समय, जगहें और कार्यक्रम का प्रकार पहचान लेता है — आप जाँचते और ठीक करते हैं।',
+  imp_raw1: 'दिन 1 — शंघाई', imp_raw2: '14:00 आगमन और होटल ट्रांसफ़र', imp_raw3: '19:30 स्वागत रात्रिभोज', imp_raw4: 'दिन 2 — शंघाई', imp_raw5: '10:00 “उदाहरण इलेक्ट्रॉनिक्स” फ़ैक्टरी',
+  imp_ok: 'पहचाना गया: 2 दिन · 3 कार्यक्रम', k_move: 'ट्रांसफ़र', k_meal: 'भोजन', k_co: 'विज़िट',
+  imp_note: 'पुरानी .xls और .doc फ़ाइलें नए फ़ॉर्मैट में दोबारा सेव करें। Excel टेम्पलेट डैशबोर्ड में है।', manual: 'हाथ से',
+  f_h: 'प्रतिभागी को क्या मिलता है',
+  f1_h: 'आज', f1_p: 'अभी क्या है, आगे क्या है और समन्वयक से संपर्क का बटन।',
+  f2_h: 'दिन-ब-दिन योजना', f2_p: 'यात्रा के सभी दिन: समय, जगह और कार्यक्रम का प्रकार।',
+  f3_h: 'रूट', f3_p: 'नक्शे पर यात्रा के शहर।',
+  f4_h: 'समूह', f4_p: 'कौन जा रहा है और किन कंपनियों से — रवाना होने से पहले परिचय।',
+  f5_h: 'चैट', f5_p: 'समन्वयक की घोषणाएँ और समूह के सवाल।',
+  f6_h: 'तैयारी', f6_p: 'देश की गाइड: मुद्रा, कनेक्टिविटी, ज़रूरी ऐप।',
+  f7_h: '6 भाषाएँ', f7_p: 'Русский, English, 中文, Қазақша, العربية, हिन्दी — पहली बार खोलने पर चुनी जाती है।',
+  f8_h: 'लाइट और डार्क थीम', f8_p: 'सिस्टम के अनुसार या अपनी पसंद से — ऐप और डैशबोर्ड दोनों में।',
+  d_h: 'किसी भी डिवाइस से',
+  d1_h: 'कंप्यूटर', d1_p: 'कदमों के मेन्यू और फ़ोन के लाइव प्रीव्यू वाला डैशबोर्ड।',
+  d2_h: 'टैबलेट', d2_p: 'वही कदम, फ़ोन बगल में: सेक्शन बदलें और नतीजा देखें।',
+  d3_h: 'फ़ोन', d3_p: 'प्रतिभागी ऐप और ब्रांड का तेज़ कंस्ट्रक्टर।',
+  p_h: 'प्लान', p_sub: 'ड्राफ़्ट: प्लान की सामग्री और कीमतों पर चर्चा चल रही है।',
+  draft: 'ड्राफ़्ट', price_tbd: 'कीमत तय होनी है', price_req: 'अनुरोध पर',
+  p1_h: 'ट्रायल', p1_p: 'अपने समूह पर आज़माएँ', p1_f1: '1 यात्रा', p1_f2: '[तय करना है] प्रतिभागियों तक', p1_f3: 'Excel, Word और PDF से अपलोड',
+  p2_h: 'प्रति यात्रा', p2_p: 'कभी-कभार समूह ले जाने वालों के लिए', p2_f1: 'एक यात्रा का भुगतान', p2_f2: 'आपका लोगो और रंग', p2_f3: 'समूह के लिए कोड, लिंक और QR',
+  p3_h: 'वार्षिक', p3_p: 'नियमित यात्राओं वाली एजेंसियों के लिए', p3_f1: 'पूरे साल यात्राएँ', p3_f2: '[तय करना है] समन्वयक', p3_f3: 'सभी कार्यक्रम एक डैशबोर्ड में',
+  p4_h: 'अपना ऐप', p4_p: 'आपके नाम से अलग ऐप', p4_f1: 'App Store और Google Play', p4_f2: 'आपके डोमेन पर वेब संस्करण', p4_f3: '[तय करना है] समय और शर्तें',
+  p_btn: 'चर्चा करें',
+  q_h: 'सवाल',
+  q1: 'क्या प्रतिभागियों को कुछ इंस्टॉल करना होगा?', a1: 'यात्रा ब्राउज़र में लिंक से खुलती है। App Store और Google Play में ऐप — [तय करना है: प्रकाशन की तारीख़]।',
+  q2: 'ऐप किन भाषाओं में काम करता है?', a2: 'रूसी, अंग्रेज़ी, चीनी, कज़ाख़, अरबी और हिन्दी। भाषा पहली बार खोलने पर चुनी जाती है और सेटिंग्स में बदली जा सकती है। कार्यक्रम का पाठ आयोजक की भाषा में ही रहता है।',
+  q3: 'कैसे आज़माएँ?', a3: 'डैशबोर्ड खोलें: आयोजक बनाएँ, अपना कार्यक्रम अपलोड करें या उदाहरण लें — और यात्रा को प्रतिभागी की नज़र से देखें।',
+  end_h: 'अपने कार्यक्रम पर देखें', end_p: 'Excel, Word या PDF अपलोड करें और तुरंत यात्रा को प्रतिभागी की नज़र से देखें।',
+  contact: 'संपर्क: [तय करना है: आवेदनों के लिए ईमेल और फ़ोन]',
+  foot: 'प्लेटफ़ॉर्म का अस्थायी नाम · © 2026',
+  ph_org: 'आपकी कंपनी', ph_trip: 'शंघाई और हांगझोउ · 4 दिन', ph_now: 'अभी', ph_ev: '“उदाहरण इलेक्ट्रॉनिक्स” फ़ैक्टरी', ph_ev_p: 'वर्कशॉप का दौरा',
+  ph_next: 'आगे', ph_n1: 'दोपहर का भोजन', ph_n2: 'लॉजिस्टिक्स सेंटर', ph_n3: 'बंड पर सैर', ph_call: 'समन्वयक को कॉल करें',
+  t_today: 'आज', t_plan: 'योजना', t_people: 'लोग', t_chat: 'चैट',
+  ph_d1: 'दिन 1 · शंघाई', ph_d1e: 'आगमन · ब्रीफ़िंग · रात्रिभोज', ph_d2: 'दिन 2 · शंघाई', ph_d2e: 'फ़ैक्टरी · भोजन · गोदाम · द बंड',
+  ph_d3: 'दिन 3 · हांगझोउ', ph_d3e: 'ट्रेन · कैंपस · चाय समारोह', ph_d4: 'दिन 4 · हांगझोउ', ph_d4e: 'समापन बैठक · प्रस्थान',
+  ph_p1: 'इवान पेत्रोव', ph_p1c: 'उदाहरण रिटेल', ph_p2: 'ओल्गा सिदोरोवा', ph_p2c: 'उदाहरण लॉजिस्टिक्स', ph_p3: 'प्योत्र इवानोव', ph_p3c: 'उदाहरण मैन्युफ़ैक्चरिंग', ph_p4: 'अन्ना कुज़नेत्सोवा', ph_p4c: 'उदाहरण इन्वेस्ट',
+  f9_h: "टूर की बिक्री",
+  f9_p: "उसी कार्यक्रम से आपकी वेबसाइट के लिए टूर पेज और Instagram, VK, Telegram, Facebook और LinkedIn के बैनर।",
+  p1_f4: "बैनर के साथ 2 टूर पेज — मुफ़्त",
+  p2_f4: "असीमित टूर पेज और बैनर",
+  p3_f4: "असीमित टूर पेज और बैनर",
+  q4: "क्या टूर बेचने के लिए पेज बना सकते हैं?",
+  a4: "हाँ। डैशबोर्ड में «टूर की बिक्री» है: 6 कदमों में आपकी वेबसाइट का पेज और हर सोशल नेटवर्क के लिए तैयार पोस्ट टेक्स्ट के साथ बैनर बन जाते हैं। 2 पेज मुफ़्त, आगे सब्सक्रिप्शन से।",
+  ph_coord: 'समन्वयक', ph_m1: 'सुप्रभात! बस 9:00 बजे लॉबी से।', ph_m2: 'धन्यवाद, हम समय पर रहेंगे!', ph_m3: 'पासपोर्ट साथ रखें — फ़ैक्टरी में सूची से प्रवेश है।',
+},
+};
+const LANGS = Object.keys(T);
+const PALETTE = ['#1a73e8', '#0f8a6c', '#7048e8', '#c2255c', '#e8590c', '#0c8599', '#2b2f3a', '#b08900'];
+const root = document.documentElement;
+const pref = {
+  get(k) { try { return localStorage.getItem('gtt:pref:' + k); } catch { return null; } },
+  set(k, v) { try { localStorage.setItem('gtt:pref:' + k, v); } catch { /* без хранилища — до перезагрузки */ } },
+};
+const esc = (s) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+// *акцент* — цветом бренда, [уточнить …] — жёлтой плашкой: заглушки должны быть видны
+const fmt = (s) => esc(s).replace(/\*([^*]+)\*/g, '<em class="acc">$1</em>').replace(/\[([^\]]+)\]/g, '<mark>$1</mark>');
+
+function setLang(l) {
+  const d = T[l] || T.ru;
+  root.lang = l;
+  root.dir = l === 'ar' ? 'rtl' : 'ltr';
+  document.title = d.title;
+  document.querySelectorAll('[data-i]').forEach((el) => { el.innerHTML = fmt(d[el.dataset.i] ?? T.ru[el.dataset.i] ?? ''); });
+  document.querySelectorAll('[data-i-aria]').forEach((el) => el.setAttribute('aria-label', d[el.dataset.iAria]));
+  // в распознанной программе — те же строки без времени
+  document.querySelectorAll('[data-x]').forEach((el) => { el.textContent = d[el.dataset.x].replace(/^\d{1,2}:\d{2}\s*/, ''); });
+  document.getElementById('lang').value = l;
+  // в шрифте заголовков нет казахских форм — без подсказки он рисует болгарские «в», «д», «т»
+  document.querySelectorAll('h1, h2, .plan h3').forEach((el) => (l === 'kk' ? el.setAttribute('lang', 'ru') : el.removeAttribute('lang')));
+}
+const saved = pref.get('lang');
+const nav = (navigator.languages || [navigator.language || 'ru']).map((x) => String(x).slice(0, 2)).find((x) => LANGS.includes(x));
+setLang(LANGS.includes(saved) ? saved : nav || 'ru');
+// выбор на лендинге — общий с приложением: кабинет откроется на этом же языке
+document.getElementById('lang').addEventListener('change', (e) => { setLang(e.target.value); pref.set('lang', e.target.value); });
+
+const mq = matchMedia('(prefers-color-scheme: dark)');
+function paintTheme() {
+  const t = root.dataset.theme;
+  root.dataset.dark = (t ? t === 'dark' : mq.matches) ? '1' : '0';
+}
+const th = pref.get('theme');
+if (th === 'light' || th === 'dark') root.dataset.theme = th;
+paintTheme();
+mq.addEventListener?.('change', paintTheme);
+document.getElementById('theme').addEventListener('click', () => {
+  const next = root.dataset.dark === '1' ? 'light' : 'dark';
+  root.dataset.theme = next;
+  pref.set('theme', next);
+  paintTheme();
+});
+
+const phone = document.getElementById('phone');
+phone.querySelectorAll('.tab').forEach((b) => b.addEventListener('click', () => {
+  phone.querySelectorAll('.tab').forEach((x) => x.setAttribute('aria-selected', String(x === b)));
+  phone.querySelectorAll('.scr').forEach((s) => { s.hidden = s.dataset.s !== b.dataset.tab; });
+}));
+const dots = document.getElementById('dots');
+PALETTE.forEach((c, i) => {
+  const b = document.createElement('button');
+  b.className = 'dot'; b.type = 'button'; b.style.background = c; b.style.color = c;
+  b.setAttribute('aria-label', c); b.setAttribute('aria-pressed', String(i === 0));
+  b.addEventListener('click', () => {
+    phone.style.setProperty('--pb', c);
+    dots.querySelectorAll('.dot').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+  });
+  dots.appendChild(b);
+});
+</script>
+</body>
+</html>
