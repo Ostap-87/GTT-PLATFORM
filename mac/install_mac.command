@@ -1,11 +1,12 @@
 #!/bin/bash
 # ============================================================
 #  Приложения GTT для Mac (macOS 11+, Intel или Apple Silicon): окно приложения с иконкой
-#  в «Программах» и на рабочем столе. Веб-сборку делает GitHub Actions («Сборка для Mac»,
-#  выпуск mac-web) — сюда скачивается готовый архив, Node.js на Mac не нужен.
+#  в «Программах» и на рабочем столе. Веб-сборку делает GitHub Actions («Сборка для Mac») и кладёт
+#  в ветку mac-dist вместе с этим установщиком — Node.js на Mac не нужен. Скачивание — через
+#  codeload.github.com (как «Download ZIP»): raw.githubusercontent.com в части сетей России закрыт.
 #  Установка и обновление — одна команда в Терминале:
-#    curl -fsSL https://raw.githubusercontent.com/Ostap-87/GTT-APP/main/mac/install_mac.command | bash -s Ostap-87/GTT-APP
-#    curl -fsSL https://raw.githubusercontent.com/Ostap-87/GTT-PLATFORM/main/mac/install_mac.command | bash -s Ostap-87/GTT-PLATFORM
+#    D=$(mktemp -d) && curl -fL https://codeload.github.com/Ostap-87/GTT-APP/tar.gz/refs/heads/mac-dist | tar -xzf - -C "$D" --strip-components=1 && bash "$D/install_mac.command"
+#    (GTT Platform — то же с Ostap-87/GTT-PLATFORM)
 #  Данные приложения (демо-поездки, кабинет организатора) при обновлении сохраняются.
 # ============================================================
 set -e
@@ -16,12 +17,19 @@ TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 echo "=== $REPO: установка на Mac ==="
 
-echo "[1/4] Скачиваю приложение (свежая сборка с GitHub)…"
-curl -fL --retry 5 --connect-timeout 20 --progress-bar -o "$TMP/web.zip" \
-    "https://github.com/$REPO/releases/download/mac-web/web.zip"
-mkdir -p "$TMP/pack"
-unzip -q "$TMP/web.zip" -d "$TMP/pack"
-. "$TMP/pack/app.conf"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]:-.}")" && pwd)"
+if [ -f "$HERE/app.conf" ] && [ -d "$HERE/web" ]; then
+    PACK="$HERE"                                   # установщик запущен из скачанной сборки mac-dist
+else
+    echo "[1/4] Скачиваю приложение (свежая сборка с GitHub)…"
+    curl -fL --retry 5 --connect-timeout 20 --progress-bar -o "$TMP/app.tgz" \
+        "https://codeload.github.com/$REPO/tar.gz/refs/heads/mac-dist"
+    mkdir -p "$TMP/pack"
+    tar -xzf "$TMP/app.tgz" -C "$TMP/pack" --strip-components=1
+    PACK="$TMP/pack"
+fi
+echo "[1/4] Сборка: $PACK"
+. "$PACK/app.conf"
 [ -n "$NAME" ] || { echo "В архиве нет app.conf — сборка повреждена, повторите позже."; exit 1; }
 
 echo "[2/4] Окно приложения (Python + pywebview)"
@@ -57,7 +65,7 @@ APP="$HOME/Applications/$NAME.app"
 pkill -f "$APP/Contents/Resources/gtt_window.py" 2>/dev/null || true     # открыто — закрываем старую версию
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources" "$HOME/Library/Logs"
-cp -R "$TMP/pack/." "$APP/Contents/Resources/"
+cp -R "$PACK/." "$APP/Contents/Resources/"
 cat > "$APP/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">

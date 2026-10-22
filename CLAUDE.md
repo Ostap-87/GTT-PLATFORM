@@ -16,7 +16,7 @@ White label платформа для организаторов деловых 
 - Приложение для Mac (`mac/`, решение 22.10.2026) общее с GTT-APP: `install_mac.command`, `gtt_window.py`, `make_icon.py` и
   workflow «Сборка для Mac» приходят слиянием; **`mac/app.conf` и `mac/AppIcon.icns` (+ `icon-1024.png`) — платформенные**
   («GTT Platform», порт 8732, старт `/org`, `python3 mac/make_icon.py platform`), при конфликте оставляй их. Установка:
-  `curl -fsSL https://raw.githubusercontent.com/Ostap-87/GTT-PLATFORM/main/mac/install_mac.command | bash -s Ostap-87/GTT-PLATFORM`.
+  `D=$(mktemp -d) && curl -fL https://codeload.github.com/Ostap-87/GTT-PLATFORM/tar.gz/refs/heads/mac-dist | tar -xzf - -C "$D" --strip-components=1 && bash "$D/install_mac.command"`.
 - Свой проект Expo `@ostap87s-team/gttplatform` (https://expo.dev/accounts/ostap87s-team/projects/gttplatform, создан
   21.10.2026): `mobile/app.json` — «GTT Platform», slug `gttplatform`, свой `projectId`; QR-код — в сводке прогона
   «Приложение — Expo Go». Секрет `EXPO_TOKEN` — в настройках **этого** репозитория. При слиянии из GTT-APP `mobile/app.json`

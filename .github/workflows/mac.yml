@@ -1,7 +1,8 @@
 name: Сборка для Mac
 
-# Веб-сборка приложения архивом web.zip в выпуске mac-web: его скачивает mac/install_mac.command
-# (окно приложения на Mac). Архив: web/ (expo export), gtt_window.py, app.conf, AppIcon.icns.
+# Веб-сборка приложения в ветке mac-dist (перезаписывается каждой сборкой): web/ (expo export),
+# install_mac.command, gtt_window.py, app.conf, AppIcon.icns. Пользователь скачивает её архивом с
+# codeload.github.com (raw.githubusercontent.com в части сетей России закрыт).
 on:
   push:
     branches: [main]
@@ -35,26 +36,23 @@ jobs:
         working-directory: mobile
         run: npx expo export --platform web
 
-      - name: Архив для Mac
-        run: |
-          mkdir -p pack
-          cp -R mobile/dist pack/web
-          cp mac/gtt_window.py mac/app.conf mac/AppIcon.icns pack/
-          (cd pack && zip -qr ../web.zip .)
-          ls -la web.zip
-
-      - name: Выпуск mac-web
+      - name: Ветка mac-dist
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release view mac-web >/dev/null 2>&1 || gh release create mac-web --latest=false \
-            --title "Сборка для Mac" \
-            --notes "Веб-версия приложения для установщика mac/install_mac.command. Обновляется при каждом изменении приложения."
-          gh release upload mac-web web.zip --clobber
+          mkdir -p pack
+          cp -R mobile/dist pack/web
+          cp mac/install_mac.command mac/gtt_window.py mac/app.conf mac/AppIcon.icns pack/
+          cd pack
+          git init -q -b mac-dist
+          git add -A
+          git -c user.name="github-actions" -c user.email="github-actions@users.noreply.github.com" \
+            commit -q -m "Сборка для Mac из ${GITHUB_SHA::7}"
+          git push -q -f "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git" mac-dist
           {
-            echo "### Сборка для Mac готова"
+            echo "### Сборка для Mac готова (ветка mac-dist)"
             echo "Установить или обновить на Mac — в Терминале:"
             echo '```'
-            echo "curl -fsSL https://raw.githubusercontent.com/${{ github.repository }}/main/mac/install_mac.command | bash -s ${{ github.repository }}"
+            echo "D=\$(mktemp -d) && curl -fL https://codeload.github.com/${{ github.repository }}/tar.gz/refs/heads/mac-dist | tar -xzf - -C \"\$D\" --strip-components=1 && bash \"\$D/install_mac.command\""
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"

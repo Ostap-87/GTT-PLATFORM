@@ -15,7 +15,7 @@ https://ostap-87.github.io/GTT-PLATFORM/org. Путь клиента — [`docs/
 с python.org). Установка и обновление — в Терминале:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Ostap-87/GTT-PLATFORM/main/mac/install_mac.command | bash -s Ostap-87/GTT-PLATFORM
+D=$(mktemp -d) && curl -fL https://codeload.github.com/Ostap-87/GTT-PLATFORM/tar.gz/refs/heads/mac-dist | tar -xzf - -C "$D" --strip-components=1 && bash "$D/install_mac.command"
 ```
 
 Обновления общего приложения приходят из GTT-APP: `git fetch https://github.com/Ostap-87/GTT-APP.git main && git merge FETCH_HEAD`.
