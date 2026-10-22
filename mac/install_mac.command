@@ -63,6 +63,9 @@ fi
 echo "[3/4] Приложение «$NAME» в ~/Applications"
 APP="$HOME/Applications/$NAME.app"
 pkill -f "$APP/Contents/Resources/gtt_window.py" 2>/dev/null || true     # открыто — закрываем старую версию
+# и старое окно этого приложения (Chrome с его профилем): без сервера оно показывает «не удаётся получить доступ к сайту»
+PORT_NOW=$(sed -n 's/^PORT=\([0-9]*\).*/\1/p' "$PACK/app.conf" 2>/dev/null | head -1)
+[ -n "$PORT_NOW" ] && pkill -f "user-data-dir=$SUPPORT/browser-$PORT_NOW" 2>/dev/null || true
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources" "$HOME/Library/Logs"
 cp -R "$PACK/." "$APP/Contents/Resources/"

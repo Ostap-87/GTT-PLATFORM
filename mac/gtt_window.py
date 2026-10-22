@@ -127,6 +127,12 @@ def run_in_chromium(exe: str, url: str, conf: dict) -> None:
     os.makedirs(profile, exist_ok=True)
     subprocess.run([exe, f"--app={url}", f"--user-data-dir={profile}", "--no-first-run", "--no-default-browser-check",
                     f"--window-size={conf.get('WIDTH', 430)},{conf.get('HEIGHT', 900)}"])
+    # если окно с этим профилем уже открыто, Chrome передаёт ему адрес и сразу выходит — сервер при этом должен жить
+    # дальше (иначе в окне ERR_CONNECTION_REFUSED): ждём, пока закроются все окна с нашим профилем
+    time.sleep(2)
+    while subprocess.run(["pgrep", "-f", f"user-data-dir={profile}"], capture_output=True).returncode == 0:
+        time.sleep(2)
+    log("окно закрыто — выхожу")
 
 
 def main():
