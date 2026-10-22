@@ -13,7 +13,7 @@ White label платформа для организаторов деловых 
   оставляй версию платформы. Обратно в GTT-APP конструктор и white label не переносим.
 - Коммит GTT-APP «Разделение…» (ac3722d), который убрал там white label, здесь уже учтён без применения (`merge -s ours`),
   поэтому слияния из GTT-APP конструктор не удаляют.
-- Приложение для Mac (`mac/`, решение 22.10.2026) общее с GTT-APP: `install_mac.command`, `gtt_window.py`, `make_icon.py` и
+- Приложение для Mac (`mac/`, решение 22.10.2026) общее с GTT-APP: `install_mac.command`, `gtt_window.py`, `compat.js`, `make_icon.py` и
   workflow «Сборка для Mac» приходят слиянием; **`mac/app.conf` и `mac/AppIcon.icns` (+ `icon-1024.png`) — платформенные**
   («GTT Platform», порт 8732, старт `/org`, `python3 mac/make_icon.py platform`), при конфликте оставляй их. Установка:
   `D=$(mktemp -d) && curl -fL https://codeload.github.com/Ostap-87/GTT-PLATFORM/tar.gz/refs/heads/mac-dist | tar -xzf - -C "$D" --strip-components=1 && bash "$D/install_mac.command"`.

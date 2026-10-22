@@ -36,6 +36,21 @@ jobs:
         working-directory: mobile
         run: npx expo export --platform web
 
+      - name: Совместимость со старыми Mac (движок Safari 13+)
+        working-directory: mobile/dist
+        run: |
+          # код приложения — в синтаксис ES2019 (на macOS 11–13 встроенный движок не понимает ??=, ?. и т. п.),
+          # первым скриптом — mac/compat.js: недостающие функции и текст ошибки вместо белого экрана
+          npx --yes esbuild@0.24.0 _expo/static/js/web/*.js --outdir=_expo/static/js/web --allow-overwrite \
+            --target=es2019,safari13 --charset=utf8 --minify-whitespace --log-level=warning
+          cp ../../mac/compat.js compat.js
+          python3 - <<'PY'
+          s = open("index.html", encoding="utf-8").read()
+          i = s.index("<script")
+          open("index.html", "w", encoding="utf-8").write(s[:i] + '<script src="/compat.js"></script>' + s[i:])
+          PY
+          for f in compat.js _expo/static/js/web/*.js; do npx --yes acorn@8.14.0 --ecma2019 --silent "$f"; done
+
       - name: Ветка mac-dist
         env:
           GH_TOKEN: ${{ github.token }}

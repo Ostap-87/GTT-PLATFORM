@@ -6,12 +6,17 @@
   между запусками. Порт занят этим же приложением — окно подключается к нему.
 * Пути, которых нет среди файлов (/org, /join?code=…), отдают index.html — дальше маршрут
   разбирает роутер Expo.
-* Без pywebview — открывается браузер по умолчанию.
+* Окно — pywebview (движок Safari). Если Safari старше 15 (macOS 11–12 без обновлений), а на Mac есть Chrome,
+  Яндекс Браузер, Edge или Chromium, — окно этого браузера в режиме приложения со своим профилем данных
+  (FORCE_BROWSER=1 в app.conf — всегда так). Без pywebview — браузер по умолчанию.
 """
+from __future__ import annotations
+
 import functools
 import http.server
 import os
-import socket
+import plistlib
+import subprocess
 import sys
 import threading
 import time
@@ -73,10 +78,45 @@ def serve(port: int) -> str:
     raise SystemExit("Не удалось запустить встроенный сервер")
 
 
+CHROMIUMS = ("Google Chrome.app/Contents/MacOS/Google Chrome", "Yandex.app/Contents/MacOS/Yandex",
+             "Microsoft Edge.app/Contents/MacOS/Microsoft Edge", "Chromium.app/Contents/MacOS/Chromium",
+             "Brave Browser.app/Contents/MacOS/Brave Browser")
+
+
+def safari_major() -> int:
+    try:
+        with open("/Applications/Safari.app/Contents/Info.plist", "rb") as fh:
+            return int(plistlib.load(fh)["CFBundleShortVersionString"].split(".")[0])
+    except Exception:
+        return 0
+
+
+def chromium() -> str | None:
+    for base in ("/Applications", os.path.expanduser("~/Applications")):
+        for rel in CHROMIUMS:
+            exe = os.path.join(base, rel)
+            if os.access(exe, os.X_OK):
+                return exe
+    return None
+
+
+def run_in_chromium(exe: str, url: str, conf: dict) -> None:
+    """Окно браузера в режиме приложения; ждём, пока его закроют (свой профиль — свой процесс)."""
+    profile = os.path.expanduser(f"~/Library/Application Support/GTT-Mac/browser-{conf.get('PORT', '0')}")
+    os.makedirs(profile, exist_ok=True)
+    subprocess.run([exe, f"--app={url}", f"--user-data-dir={profile}", "--no-first-run", "--no-default-browser-check",
+                    f"--window-size={conf.get('WIDTH', 430)},{conf.get('HEIGHT', 900)}"])
+
+
 def main():
     conf = load_conf(sys.argv[1] if len(sys.argv) > 1 else os.path.join(HERE, "app.conf"))
     base = serve(int(conf.get("PORT", "8731")))
     url = base + conf.get("START", "/")
+    safari, exe = safari_major(), chromium()
+    print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} {url} Safari {safari or '?'}, Chromium: {exe or 'нет'}", flush=True)
+    if exe and (conf.get("FORCE_BROWSER") == "1" or 0 < safari < 15):
+        run_in_chromium(exe, url, conf)
+        os._exit(0)
     try:
         import webview
     except ImportError:
