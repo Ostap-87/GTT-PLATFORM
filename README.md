@@ -11,6 +11,13 @@ https://ostap-87.github.io/GTT-PLATFORM/org. Путь клиента — [`docs/
 соцсетей) — в кабинете организатора, раздел «Продажа тура». Языки: русский, английский, китайский,
 казахский, арабский, хинди; тема светлая и тёмная.
 
+**На MacBook** — окно «GTT Platform» с иконкой на рабочем столе, сразу кабинет организатора (нужен Python 3.9+
+с python.org). Установка и обновление — в Терминале:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Ostap-87/GTT-PLATFORM/main/mac/install_mac.command | bash -s Ostap-87/GTT-PLATFORM
+```
+
 Обновления общего приложения приходят из GTT-APP: `git fetch https://github.com/Ostap-87/GTT-APP.git main && git merge FETCH_HEAD`.
 
 ---

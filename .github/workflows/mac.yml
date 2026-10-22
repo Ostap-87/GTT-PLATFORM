@@ -1,0 +1,60 @@
+name: Сборка для Mac
+
+# Веб-сборка приложения архивом web.zip в выпуске mac-web: его скачивает mac/install_mac.command
+# (окно приложения на Mac). Архив: web/ (expo export), gtt_window.py, app.conf, AppIcon.icns.
+on:
+  push:
+    branches: [main]
+    paths: ['mobile/**', 'mac/**', '.github/workflows/mac.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: mac-web
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Зависимости
+        working-directory: mobile
+        run: npm ci
+
+      - name: Веб-сборка
+        working-directory: mobile
+        run: npx expo export --platform web
+
+      - name: Архив для Mac
+        run: |
+          mkdir -p pack
+          cp -R mobile/dist pack/web
+          cp mac/gtt_window.py mac/app.conf mac/AppIcon.icns pack/
+          (cd pack && zip -qr ../web.zip .)
+          ls -la web.zip
+
+      - name: Выпуск mac-web
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view mac-web >/dev/null 2>&1 || gh release create mac-web --latest=false \
+            --title "Сборка для Mac" \
+            --notes "Веб-версия приложения для установщика mac/install_mac.command. Обновляется при каждом изменении приложения."
+          gh release upload mac-web web.zip --clobber
+          {
+            echo "### Сборка для Mac готова"
+            echo "Установить или обновить на Mac — в Терминале:"
+            echo '```'
+            echo "curl -fsSL https://raw.githubusercontent.com/${{ github.repository }}/main/mac/install_mac.command | bash -s ${{ github.repository }}"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
