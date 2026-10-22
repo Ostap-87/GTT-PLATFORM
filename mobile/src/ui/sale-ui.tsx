@@ -1,7 +1,7 @@
 // «Продажа тура»: редактор фото (точка интереса, приближение, затемнение), кадры под форматы, загрузка перетаскиванием
 // и макеты соцсетей — как баннер с текстом будет выглядеть в ленте на телефоне и на компьютере.
 // Цвета макетов соцсетей — их собственные (белая лента, серый фон), а не токены приложения: это картинка чужого экрана.
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { createElement, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Image, Platform, Pressable, Text, View, type GestureResponderEvent } from 'react-native';
 
 import { renderBanner, type BannerInput } from '@/data/banner';
@@ -89,7 +89,8 @@ export function PhotoEditor({ src, value, onChange, maxW }: { src: string; value
 }
 
 /** Место для перетаскивания фото (в браузере на компьютере). */
-export function DropZone({ onPhotos, children }: { onPhotos: (dataUrls: string[]) => void; children: ReactNode }) {
+/** Перетаскивание файлов в браузере: фото и (если video) ролики — data:URL. */
+export function DropZone({ onFiles, video, children }: { onFiles: (dataUrls: string[]) => void; video?: boolean; children: ReactNode }) {
   const ref = useRef<View>(null);
   const [over, setOver] = useState(false);
   useEffect(() => {
@@ -99,17 +100,28 @@ export function DropZone({ onPhotos, children }: { onPhotos: (dataUrls: string[]
     const prevent = (e: DragEvent) => { e.preventDefault(); setOver(e.type === 'dragover'); };
     const drop = (e: DragEvent) => {
       e.preventDefault(); setOver(false);
-      const files = [...(e.dataTransfer?.files || [])].filter((f) => f.type.startsWith('image/'));
-      Promise.all(files.map((f) => new Promise<string>((res) => { const r = new FileReader(); r.onload = () => res(String(r.result)); r.readAsDataURL(f); }))).then(onPhotos);
+      const files = [...(e.dataTransfer?.files || [])].filter((f) => f.type.startsWith('image/') || (video && f.type.startsWith('video/')));
+      Promise.all(files.map((f) => new Promise<string>((res) => { const r = new FileReader(); r.onload = () => res(String(r.result)); r.readAsDataURL(f); }))).then(onFiles);
     };
     el.addEventListener('dragover', prevent);
     el.addEventListener('dragleave', prevent);
     el.addEventListener('drop', drop);
     return () => { el.removeEventListener('dragover', prevent); el.removeEventListener('dragleave', prevent); el.removeEventListener('drop', drop); };
-  }, [onPhotos]);
+  }, [onFiles, video]);
   return (
     <View ref={ref} style={{ borderRadius: 20, borderWidth: 2, borderStyle: 'dashed', borderColor: over ? C.blue : C.line, backgroundColor: over ? C.blueSoft : 'transparent', padding: 18, gap: 12, alignItems: 'center' }}>
       {children}
+    </View>
+  );
+}
+
+/** Ролик обложки без звука по кругу; на телефоне — заглушка (видео добавляется в браузере). */
+export function VideoPreview({ src, w, h }: { src: string; w: number; h: number }) {
+  return (
+    <View style={{ width: w, height: h, borderRadius: 14, overflow: 'hidden', backgroundColor: '#0f1b2d', alignItems: 'center', justifyContent: 'center' }}>
+      {Platform.OS === 'web' && src
+        ? createElement('video', { src, muted: true, autoPlay: true, loop: true, playsInline: true, style: { width: '100%', height: '100%', objectFit: 'cover', display: 'block' } })
+        : <Icon name="video" size={28} color="#fff" />}
     </View>
   );
 }

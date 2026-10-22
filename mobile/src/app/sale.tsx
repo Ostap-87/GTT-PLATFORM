@@ -3,19 +3,20 @@
 // и телефоне, баннер в ленте соцсети. Бесплатно — 2 страницы, дальше — по подписке.
 // /sale?id=<организатор> — список страниц; &page=<id>&step=1…6 — мастер; &program=<id> — сразу страница этой программы.
 import * as Clipboard from 'expo-clipboard';
+import * as ImagePicker from 'expo-image-picker';
 import { router, useLocalSearchParams } from 'expo-router';
 import { strToU8, zipSync } from 'fflate';
-import { useCallback, useEffect, useState } from 'react';
-import { Image, Linking, Platform, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Image, Linking, Platform, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { pngBytes, renderBanner, type BannerInput } from '@/data/banner';
 import { webBase } from '@/data/import';
 import { WEB_URL, daysRu, normDate, orgOf, ruDate, saveOrg, tripDates, type OProgram, type Org } from '@/data/org';
-import { dropPhoto, preparePhoto, putPhoto, usePhotos } from '@/data/photos';
+import { MAX_VIDEO_MB, dropPhoto, preparePhoto, prepareVideo, putPhoto, usePhotos, useVideoBlob } from '@/data/photos';
 import {
-  BLOCKS, FORMATS, FREE_PAGES, NETS, STYLES, canCreatePage, defaultText, factsOf, formatOf, isPro, linkFor, netOf, newPage, pageCtx, pagesMade, pagesOf, postFor, slugOf,
-  type FormatKey, type NetKey, type OPage, type PageText, type PhotoRef,
+  BLOCKS, FORMATS, FREE_PAGES, MESSENGERS, NETS, STYLES, canCreatePage, channelsOf, dayDetailsOf, defaultText, factsOf, formatOf, heroOf, isPro, linkFor, netOf, newPage, pageCtx, pagesMade,
+  pagesOf, parseRequisites, postFor, requestOf, slugOf, type Channel, type FormatKey, type Messenger, type NetKey, type OPage, type PageText, type PhotoRef,
 } from '@/data/sale';
 import { allTenants, type Tenant } from '@/data/tenant';
 import { tourHtml } from '@/data/tour-html';
@@ -26,25 +27,25 @@ import { shareFile } from '@/ui/files';
 import { HtmlFrame } from '@/ui/HtmlFrame';
 import { Icon } from '@/ui/Icon';
 import type { IconName } from '@/ui/icon-paths';
-import { Button, Card, Check, Chips, Field, H3, Pick, Row, Seg, T } from '@/ui/kit';
+import { Button, Card, Check, Chips, Field, H3, Label, Pick, Row, Seg, T, inputStyle } from '@/ui/kit';
 import { Monogram } from '@/ui/Monogram';
 import { Press } from '@/ui/motion';
 import { pickPhoto } from '@/ui/notes-ui';
-import { Crop, DropZone, PhotoEditor, SocialMock, useBannerImages, useNatural, type Device } from '@/ui/sale-ui';
+import { Crop, DropZone, PhotoEditor, SocialMock, VideoPreview, useBannerImages, useNatural, type Device } from '@/ui/sale-ui';
 import { C, F, SH } from '@/ui/theme';
 
 type Step = 1 | 2 | 3 | 4 | 5 | 6;
 const STEPS: [Step, string, IconName, string][] = [
   [1, __('Программа'), 'route', __('Выберите программу, даты и языки страницы.')],
-  [2, __('Фото'), 'camera', __('Загрузите фото и покажите, что на них главное.')],
-  [3, __('Тексты'), 'doc', __('Проверьте заголовок, что входит и программу по дням.')],
-  [4, __('Страница'), 'grid', __('Включите нужные блоки и контакты для заявок.')],
+  [2, __('Фото и видео'), 'camera', __('Загрузите фото и выберите обложку: одно фото, слайд-шоу или видео.')],
+  [3, __('Тексты'), 'doc', __('Проверьте заголовок и программу — каждый день можно расписать подробно.')],
+  [4, __('Страница'), 'grid', __('Блоки страницы, мессенджеры для заявок, рассказ о вас и реквизиты.')],
   [5, __('Баннеры'), 'star', __('Выберите стиль — баннеры под каждую соцсеть готовы.')],
   [6, __('Публикация'), 'send', __('Скачайте страницу и баннеры, скопируйте тексты постов.')],
 ];
 const FMT_NET: Record<FormatKey, NetKey> = { ig_post: 'instagram', ig_story: 'stories', vk: 'vk', tg: 'telegram', fb: 'facebook', sq: 'square' };
 const LANG_NAME = Object.fromEntries(LANGS.map(([c, self]) => [c, self])) as Record<Lang, string>;
-const MAX_PHOTOS = 8;
+const MAX_PHOTOS = 30;
 
 export default function Sale() {
   const params = useLocalSearchParams<{ id?: string; page?: string; step?: string; program?: string }>();
@@ -181,7 +182,11 @@ function Wizard({ t, org, upd, pg, step }: { t: Tenant; org: Org; upd: (fn: (o: 
   const base = pg.langs[0];
   const [lang, setLang] = useState<Lang>(base);
   const L = pg.langs.includes(lang) ? lang : base;
-  const photos = usePhotos(pg.photos.map((p) => p.id));
+  const hero = heroOf(pg);
+  const photos = usePhotos([...pg.photos.map((p) => p.id), ...(org.orgPhotos || []), hero.video].filter(Boolean));
+  const video = useVideoBlob(hero.video ? photos[hero.video] : undefined);
+  const videoUrl = video.url;
+  const post = useMemo(() => (video.blob ? { heroVideo: video.blob } : undefined), [video.blob]);
   const [fmt, setFmt] = useState<FormatKey>('ig_post');
   const [net, setNet] = useState<NetKey>('instagram');
   const [device, setDevice] = useState<Device>('phone');
@@ -213,6 +218,8 @@ function Wizard({ t, org, upd, pg, step }: { t: Tenant; org: Org; upd: (fn: (o: 
     await shareFile(`${pg.slug}-${l}-${fk}-${f.w}x${f.h}.png`, bytes, 'png');
   };
   const htmlFile = (show?: Lang) => tourHtml({ pg, program, org, t, photos, show });
+  // в предпросмотре ролик не вставляется в страницу, а передаётся ей после загрузки (post)
+  const htmlPreview = (show: Lang) => tourHtml({ pg, program, org, t, photos, show, preview: true });
   const downloadPage = async () => { await shareFile(`${pg.slug}.html`, htmlFile(), 'html'); toast(__('Страница скачана — один файл, фото уже внутри')); };
   const downloadAll = async () => {
     if (Platform.OS !== 'web') { toast(__('Архив скачивается в браузере — откройте кабинет на компьютере')); return; }
@@ -228,7 +235,7 @@ function Wizard({ t, org, upd, pg, step }: { t: Tenant; org: Org; upd: (fn: (o: 
   };
 
   // ——— шаги ———
-  const done: Record<Step, boolean> = { 1: true, 2: pg.photos.length > 0, 3: !!cx.text.title.trim(), 4: seen > 4, 5: seen > 5, 6: !!pg.url };
+  const done: Record<Step, boolean> = { 1: true, 2: pg.photos.length > 0 || !!hero.video, 3: !!cx.text.title.trim(), 4: seen > 4, 5: seen > 5, 6: !!pg.url };
   const [, title, , sub] = STEPS[step - 1];
   const langTabs = pg.langs.length > 1 ? (
     <View style={{ gap: 6 }}>
@@ -239,9 +246,9 @@ function Wizard({ t, org, upd, pg, step }: { t: Tenant; org: Org; upd: (fn: (o: 
 
   const content =
     step === 1 ? <StepProgram t={t} org={org} pg={pg} set={set} program={program} />
-      : step === 2 ? <StepPhotos pg={pg} set={set} photos={photos} maxW={wide ? 560 : Math.min(560, width - 64)} />
-        : step === 3 ? <StepTexts t={t} org={org} pg={pg} set={set} program={program} lang={L} langTabs={langTabs} />
-          : step === 4 ? <StepPage t={t} org={org} upd={upd} pg={pg} set={set} />
+      : step === 2 ? <StepPhotos pg={pg} set={set} photos={photos} maxW={wide ? 560 : Math.min(560, width - 64)} videoUrl={videoUrl} />
+        : step === 3 ? <StepTexts t={t} org={org} pg={pg} set={set} program={program} lang={L} langTabs={langTabs} photos={photos} />
+          : step === 4 ? <StepPage t={t} org={org} upd={upd} pg={pg} set={set} lang={L} langTabs={langTabs} photos={photos} />
             : step === 5 ? (
               <>
                 {langTabs}
@@ -301,7 +308,7 @@ function Wizard({ t, org, upd, pg, step }: { t: Tenant; org: Org; upd: (fn: (o: 
               : <StepPublish pg={pg} set={set} cx={cx} net={net} setNet={setNet} langTabs={langTabs} downloadPage={downloadPage} downloadBanner={downloadBanner} downloadAll={downloadAll} bannerOf={(fk) => bannerFor(fk, L)} />;
 
   // ——— предпросмотр справа: страница пересобирается через 0,4 с после последней правки, чтобы не мигала на каждой букве ———
-  const htmlNow = step <= 4 ? htmlFile(L) : '';
+  const htmlNow = step <= 4 ? htmlPreview(L) : '';
   const [html, setHtml] = useState(htmlNow);
   useEffect(() => { const id = setTimeout(() => setHtml(htmlNow), 400); return () => clearTimeout(id); }, [htmlNow]);
   const panelW = wide ? Math.max(380, width - 250 - 680) : side ? Math.max(340, width - 560) : width - 32;
@@ -315,10 +322,10 @@ function Wizard({ t, org, upd, pg, step }: { t: Tenant; org: Org; upd: (fn: (o: 
       </View>
       {step <= 4 ? (
         device === 'desktop'
-          ? <View style={{ borderRadius: 12, overflow: 'hidden', boxShadow: SH.float }}><HtmlFrame html={html} width={1280} height={1800} scale={(panelW - 8) / 1280} /></View>
+          ? <View style={{ borderRadius: 12, overflow: 'hidden', boxShadow: SH.float }}><HtmlFrame html={html} width={1280} height={1800} scale={(panelW - 8) / 1280} post={post} /></View>
           : (
             <View style={{ borderRadius: 40, padding: 10, backgroundColor: '#101826', boxShadow: SH.float }}>
-              <HtmlFrame html={html} width={390} height={800} scale={Math.min(0.82, (panelW - 40) / 390)} radius={30} />
+              <HtmlFrame html={html} width={390} height={800} scale={Math.min(0.82, (panelW - 40) / 390)} radius={30} post={post} />
             </View>
           )
       ) : (
@@ -456,45 +463,114 @@ function StepProgram({ t, org, pg, set, program }: { t: Tenant; org: Org; pg: OP
   );
 }
 
-// ——— 2. Фото ———
-function StepPhotos({ pg, set, photos, maxW }: { pg: OPage; set: (fn: (p: OPage) => OPage) => void; photos: Record<string, string>; maxW: number }) {
+// ——— выбор нескольких фото сразу ———
+async function pickMany(): Promise<string[]> {
+  const r = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsMultipleSelection: true, quality: Platform.OS === 'web' ? 0.6 : 0.8 });
+  return r.canceled ? [] : (r.assets || []).map((a) => a.uri);
+}
+const Thumb = ({ src, on, n, onPress, label, w = 96 }: { src: string; on?: boolean; n?: number; onPress: () => void; label: string; w?: number }) => (
+  <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ selected: !!on }} style={{ borderRadius: 12, borderWidth: 3, borderColor: on ? C.blue : 'transparent' }}>
+    <Image source={{ uri: src }} style={{ width: w, height: Math.round(w * 0.75), borderRadius: 9 }} />
+    {n ? <View style={{ position: 'absolute', right: 4, top: 4, minWidth: 22, height: 22, borderRadius: 11, backgroundColor: C.blue, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 5 }}><Text style={{ fontFamily: F.bold, fontSize: 12, color: '#fff' }}>{n}</Text></View> : null}
+  </Pressable>
+);
+
+// ——— 2. Фото и видео ———
+function StepPhotos({ pg, set, photos, maxW, videoUrl }: { pg: OPage; set: (fn: (p: OPage) => OPage) => void; photos: Record<string, string>; maxW: number; videoUrl: string }) {
   const toast = useToast();
   const [sel, setSel] = useState(pg.cover || pg.photos[0]?.id || '');
   const cur = pg.photos.find((p) => p.id === sel) || pg.photos[0];
   const nat = useNatural(cur ? photos[cur.id] : undefined);
-  const add = useCallback(async (uris: string[]) => {
+  const hero = heroOf(pg);
+  const setHero = (h: Partial<ReturnType<typeof heroOf>>) => set((p) => ({ ...p, hero: { ...heroOf(p), ...h } }));
+  const addVideo = async (uri: string) => {
+    try {
+      const v = await prepareVideo(uri);
+      if (!v) { toast(__('Видео больше {a} МБ — укоротите его до 10–20 секунд', { a: MAX_VIDEO_MB })); return; }
+      const id = await putPhoto(v);
+      if (hero.video) dropPhoto(hero.video);
+      setHero({ mode: 'video', video: id });
+      toast(__('Видео на обложке — без звука, по кругу'));
+    } catch { toast(__('Не получилось открыть видео — попробуйте MP4')); }
+  };
+  const add = async (uris: string[]) => {
+    const vid = uris.find((u) => u.startsWith('data:video'));
+    if (vid) await addVideo(vid);
+    const imgs = uris.filter((u) => !u.startsWith('data:video'));
+    if (!imgs.length) return;
     const room = MAX_PHOTOS - pg.photos.length;
     if (room <= 0) { toast(__('Можно до {a} фото — удалите лишнее', { a: MAX_PHOTOS })); return; }
     const refs: PhotoRef[] = [];
-    for (const u of uris.slice(0, room)) {
+    for (const u of imgs.slice(0, room)) {
       try { refs.push({ id: await putPhoto(await preparePhoto(u)), fx: 0.5, fy: 0.45, zoom: 1, dim: 0 }); } catch { toast(__('Не получилось открыть фото — попробуйте JPG или PNG')); }
     }
     if (!refs.length) return;
     set((p) => ({ ...p, photos: [...p.photos, ...refs], cover: p.cover || refs[0].id }));
     setSel(refs[0].id);
     toast(refs.length > 1 ? __('Добавлено фото: {a}', { a: refs.length }) : __('Фото добавлено — нажмите на главное на нём'));
-  }, [pg.photos.length, set, toast]);
-  const pick = async (from: 'library' | 'camera') => { const r = await pickPhoto(from); if (r) add([r.uri]); };
+  };
+  const pickVideo = async () => {
+    const r = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['videos'] });
+    if (!r.canceled && r.assets?.length) addVideo(r.assets[0].uri);
+  };
   const patch = (r: PhotoRef) => set((p) => ({ ...p, photos: p.photos.map((x) => (x.id === r.id ? r : x)) }));
   const remove = (id: string) => {
     dropPhoto(id);
-    set((p) => { const rest = p.photos.filter((x) => x.id !== id); return { ...p, photos: rest, cover: p.cover === id ? rest[0]?.id || '' : p.cover, bannerPhoto: Object.fromEntries(Object.entries(p.bannerPhoto).filter(([, v]) => v !== id)) }; });
+    set((p) => {
+      const rest = p.photos.filter((x) => x.id !== id);
+      const h = heroOf(p);
+      return {
+        ...p, photos: rest, cover: p.cover === id ? rest[0]?.id || '' : p.cover,
+        bannerPhoto: Object.fromEntries(Object.entries(p.bannerPhoto).filter(([, v]) => v !== id)),
+        hero: p.hero ? { ...h, slides: h.slides.filter((x) => x !== id) } : p.hero,
+        dayPhotos: p.dayPhotos ? Object.fromEntries(Object.entries(p.dayPhotos).filter(([, v]) => v !== id)) : p.dayPhotos,
+      };
+    });
     setSel('');
   };
+  const toggleSlide = (id: string) => setHero({ slides: hero.slides.includes(id) ? hero.slides.filter((x) => x !== id) : [...hero.slides, id] });
+  const vw = Math.min(maxW, 360);
   return (
     <>
-      <DropZone onPhotos={add}>
+      <DropZone onFiles={add} video>
         <Icon name="camera" size={30} color={C.blueInk} />
-        <Text style={{ fontFamily: F.bold, fontSize: 16, color: C.ink, textAlign: 'center' }}>{Platform.OS === 'web' ? __('Перетащите фото сюда') : __('Добавьте фото поездки')}</Text>
+        <Text style={{ fontFamily: F.bold, fontSize: 16, color: C.ink, textAlign: 'center' }}>{Platform.OS === 'web' ? __('Перетащите фото или видео сюда') : __('Добавьте фото поездки')}</Text>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, justifyContent: 'center' }}>
-          <Button title={__('Выбрать фото')} icon="plus" onPress={() => pick('library')} />
-          {Platform.OS !== 'web' ? <Button title={__('Сделать снимок')} icon="camera" kind="light" onPress={() => pick('camera')} /> : null}
+          <Button title={__('Выбрать фото')} icon="plus" onPress={async () => add(await pickMany())} />
+          {Platform.OS !== 'web' ? <Button title={__('Сделать снимок')} icon="camera" kind="light" onPress={async () => { const r = await pickPhoto('camera'); if (r) add([r.uri]); }} /> : null}
         </View>
         <T muted>{__('JPG или PNG, до {a} фото. Лучше всего — живые фото с поездок: заводы, город, группа. Без надписей и чужих логотипов.', { a: MAX_PHOTOS })}</T>
       </DropZone>
+      <Card>
+        <H3>{__('Обложка страницы')}</H3>
+        <T muted>{__('Первый экран — то, что человек увидит сразу. Несколько фото или видео смотрятся живее одной картинки.')}</T>
+        <Seg options={[['photo', __('Одно фото')], ['slides', __('Слайд-шоу')], ['video', __('Видео')]] as const} value={hero.mode}
+          onChange={(m) => setHero(m === 'slides' && !hero.slides.length ? { mode: m, slides: pg.photos.slice(0, 5).map((p) => p.id) } : { mode: m })} />
+        {hero.mode === 'photo' ? <T muted>{__('На обложке — фото с отметкой «Обложка». Чтобы поставить другое, выберите его ниже и нажмите «Сделать обложкой».')}</T> : null}
+        {hero.mode === 'slides' ? (
+          <>
+            <T muted>{__('Отметьте фото — они будут сменять друг друга каждые 5 секунд в том порядке, в каком вы их отметили.')}</T>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+              {pg.photos.map((p) => (photos[p.id] ? <Thumb key={p.id} src={photos[p.id]} w={84} on={hero.slides.includes(p.id)} n={hero.slides.indexOf(p.id) + 1} onPress={() => toggleSlide(p.id)} label={__('Слайд-шоу: фото {a}', { a: pg.photos.indexOf(p) + 1 })} /> : null))}
+            </View>
+            {hero.slides.filter((id) => photos[id]).length < 2 ? <T style={{ color: C.warn }}>{__('Отметьте хотя бы 2 фото — пока на обложке будет одно.')}</T> : null}
+          </>
+        ) : null}
+        {hero.mode === 'video' ? (
+          <>
+            {hero.video && photos[hero.video] ? <VideoPreview src={videoUrl} w={vw} h={Math.round((vw * 9) / 16)} /> : null}
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+              <Button title={hero.video ? __('Заменить видео') : __('Загрузить видео')} icon="video" kind={hero.video ? 'light' : 'primary'} small onPress={pickVideo} />
+              {hero.video ? <Button title={__('Удалить видео')} icon="trash" kind="ghost" small onPress={() => { dropPhoto(hero.video); setHero({ video: '', mode: 'photo' }); }} /> : null}
+            </View>
+            <T muted>{__('MP4, 10–20 секунд, до {a} МБ. Видео идёт без звука по кругу, а пока грузится — видна обложка-фото.', { a: MAX_VIDEO_MB })}</T>
+          </>
+        ) : null}
+      </Card>
       {pg.photos.length ? (
         <Card>
           <H3>{__('Ваши фото · {a}', { a: pg.photos.length })}</H3>
+          <T muted>{__('Все фото попадут в галерею страницы — её листают как карусель и открывают на весь экран.')}</T>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
             {pg.photos.map((p) => photos[p.id] ? (
               <Pressable key={p.id} onPress={() => setSel(p.id)} accessibilityRole="button" accessibilityState={{ selected: cur?.id === p.id }} style={{ borderRadius: 12, borderWidth: 3, borderColor: cur?.id === p.id ? C.blue : 'transparent' }}>
@@ -539,12 +615,13 @@ function StepPhotos({ pg, set, photos, maxW }: { pg: OPage; set: (fn: (p: OPage)
 }
 
 // ——— 3. Тексты ———
-function StepTexts({ t, org, pg, set, program, lang, langTabs }: { t: Tenant; org: Org; pg: OPage; set: (fn: (p: OPage) => OPage) => void; program: OProgram; lang: Lang; langTabs: React.ReactNode }) {
+function StepTexts({ t, org, pg, set, program, lang, langTabs, photos }: { t: Tenant; org: Org; pg: OPage; set: (fn: (p: OPage) => OPage) => void; program: OProgram; lang: Lang; langTabs: React.ReactNode; photos: Record<string, string> }) {
   const toast = useToast();
   const base = pg.langs[0];
   const tx = pg.texts[lang] || pg.texts[base]!;
   const patch = (p: Partial<PageText>) => set((x) => ({ ...x, texts: { ...x.texts, [lang]: { ...(x.texts[lang] || tx), ...p } } }));
   const [armed, setArmed] = useState(false);
+  const [open, setOpen] = useState<number[]>([0]);
   const reset = () => {
     if (!armed) { setArmed(true); setTimeout(() => setArmed(false), 4000); return; }
     const trip = org.trips.find((y) => y.id === pg.tripId);
@@ -553,14 +630,20 @@ function StepTexts({ t, org, pg, set, program, lang, langTabs }: { t: Tenant; or
     toast(__('Тексты собраны заново из программы'));
   };
   const f = factsOf(program);
+  const details = tx.dayDetails ?? dayDetailsOf(program);
   const len = tx.title.trim().length;
+  const dayPhoto = (i: number, id: string) => set((p) => {
+    const d = { ...(p.dayPhotos || {}) };
+    if (d[String(i)] === id) delete d[String(i)]; else d[String(i)] = id;
+    return { ...p, dayPhotos: d };
+  });
   return (
     <>
       {langTabs}
       {lang !== base ? (
         <Card tone="warn">
           <T>{__('Автоматического перевода пока нет. Кнопки и разделы страницы уже на языке «{a}» — переведите ваш текст ниже.', { a: LANG_NAME[lang] })}</T>
-          <View style={{ flexDirection: 'row' }}><Button title={__('Скопировать мой текст с языка «{a}»', { a: LANG_NAME[base] })} kind="light" small onPress={() => { const b = pg.texts[base]!; patch({ title: b.title, subtitle: b.subtitle, days: [...b.days], about: b.about, price: b.price }); }} /></View>
+          <View style={{ flexDirection: 'row' }}><Button title={__('Скопировать мой текст с языка «{a}»', { a: LANG_NAME[base] })} kind="light" small onPress={() => { const b = pg.texts[base]!; patch({ title: b.title, subtitle: b.subtitle, days: [...b.days], dayDetails: [...(b.dayDetails ?? dayDetailsOf(program))], about: b.about, price: b.price }); }} /></View>
         </Card>
       ) : null}
       <Card>
@@ -579,22 +662,45 @@ function StepTexts({ t, org, pg, set, program, lang, langTabs }: { t: Tenant; or
       </Card>
       <Card>
         <H3>{__('Программа по дням')}</H3>
-        <T muted>{__('Коротко: что главное в этот день. Собрано из программы — поправьте, если нужно.')}</T>
-        {program.days.map((d, i) => (
-          <Field key={i} label={`${i + 1} · ${d.city || '—'}`} value={tx.days[i] ?? f.dayLines[i] ?? ''} onChangeText={(v) => { const days = [...tx.days]; days[i] = v; patch({ days }); }} />
-        ))}
-      </Card>
-      <Card>
-        <H3>{__('Об организаторе')}</H3>
-        <Field value={tx.about} onChangeText={(v) => patch({ about: v })} multiline placeholder={__('Кто вы и почему с вами надёжно: сколько лет возите группы, сколько поездок провели')} />
+        <T muted>{__('Сверху — коротко, что главное в этот день. В «Подробно» — весь день по пунктам: на странице он раскрывается по нажатию.')}</T>
+        {program.days.map((d, i) => {
+          const on = open.includes(i);
+          const ph = pg.dayPhotos?.[String(i)];
+          return (
+            <View key={i} style={{ gap: 8, paddingTop: i ? 12 : 0, borderTopWidth: i ? 1 : 0, borderColor: C.line }}>
+              <Field label={`${i + 1} · ${d.city || '—'}`} value={tx.days[i] ?? f.dayLines[i] ?? ''} onChangeText={(v) => { const days = [...tx.days]; days[i] = v; patch({ days }); }} />
+              <Pressable onPress={() => setOpen((o) => (on ? o.filter((x) => x !== i) : [...o, i]))} accessibilityRole="button" accessibilityState={{ expanded: on }} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', paddingVertical: 4 }}>
+                <Text style={{ fontFamily: F.semibold, fontSize: 13, color: C.blueInk }}>{on ? __('Свернуть день {a}', { a: i + 1 }) : __('Подробно о дне {a} и фото', { a: i + 1 })}</Text>
+                <Text style={{ color: C.blueInk, fontSize: 12 }}>{on ? '▲' : '▼'}</Text>
+                {!on && (details[i]?.trim() || ph) ? <Text style={{ fontFamily: F.regular, fontSize: 12, color: C.muted }}>{`· ${details[i]?.trim() ? __('пунктов: {a}', { a: details[i].trim().split('\n').length }) : ''}${ph ? ' 📷' : ''}`}</Text> : null}
+              </Pressable>
+              {on ? (
+                <>
+                  <Field label={__('Подробно о дне {a}', { a: i + 1 })} value={details[i] ?? ''} multiline rows={Math.min(10, Math.max(4, (details[i] ?? '').split('\n').length + 1))} placeholder={__('Каждый пункт с новой строки, время в начале: «10:00 Завод BYD — экскурсия по цеху»')}
+                    onChangeText={(v) => { const dd = [...details]; dd[i] = v; patch({ dayDetails: dd }); }} />
+                  {pg.photos.length ? (
+                    <>
+                      <Label>{__('Фото дня — нажмите, чтобы поставить или убрать')}</Label>
+                      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                        {pg.photos.map((p, k) => (photos[p.id] ? <Thumb key={p.id} src={photos[p.id]} w={64} on={ph === p.id} onPress={() => dayPhoto(i, p.id)} label={__('День {a}: фото {b}', { a: i + 1, b: k + 1 })} /> : null))}
+                      </View>
+                    </>
+                  ) : null}
+                </>
+              ) : null}
+            </View>
+          );
+        })}
       </Card>
       <View style={{ flexDirection: 'row' }}><Button title={armed ? __('Нажмите ещё раз — текст заменится') : __('Собрать тексты заново из программы')} kind="ghost" small onPress={reset} /></View>
     </>
   );
 }
 
-// ——— 4. Страница: блоки и контакты ———
-function StepPage({ t, org, upd, pg, set }: { t: Tenant; org: Org; upd: (fn: (o: Org) => Org) => void; pg: OPage; set: (fn: (p: OPage) => OPage) => void }) {
+// ——— 4. Страница: блоки, организатор, реквизиты, мессенджеры ———
+const MAX_ORG_PHOTOS = 12;
+function StepPage({ t, org, upd, pg, set, lang, langTabs, photos }: { t: Tenant; org: Org; upd: (fn: (o: Org) => Org) => void; pg: OPage; set: (fn: (p: OPage) => OPage) => void; lang: Lang; langTabs: React.ReactNode; photos: Record<string, string> }) {
+  const toast = useToast();
   const move = (i: number, d: -1 | 1) => set((p) => {
     const b = [...p.blocks];
     const j = i + d;
@@ -604,9 +710,40 @@ function StepPage({ t, org, upd, pg, set }: { t: Tenant; org: Org; upd: (fn: (o:
     b.splice(j, 0, cur);
     return { ...p, blocks: b };
   });
-  const contact = (k: 'phone' | 'email', v: string) => upd((o) => ({ ...o, contact: { ...o.contact, [k]: v } }));
+  const tx = pg.texts[lang] || pg.texts[pg.langs[0]]!;
+  const patchText = (p: Partial<PageText>) => set((x) => ({ ...x, texts: { ...x.texts, [lang]: { ...(x.texts[lang] || tx), ...p } } }));
+  // фото организатора
+  const orgPhotos = org.orgPhotos || [];
+  const addOrg = async (uris: string[]) => {
+    const room = MAX_ORG_PHOTOS - orgPhotos.length;
+    if (room <= 0) { toast(__('Можно до {a} фото — удалите лишнее', { a: MAX_ORG_PHOTOS })); return; }
+    const ids: string[] = [];
+    for (const u of uris.filter((x) => !x.startsWith('data:video')).slice(0, room)) {
+      try { ids.push(await putPhoto(await preparePhoto(u))); } catch { toast(__('Не получилось открыть фото — попробуйте JPG или PNG')); }
+    }
+    if (ids.length) upd((o) => ({ ...o, orgPhotos: [...(o.orgPhotos || []), ...ids] }));
+  };
+  const dropOrg = (id: string) => { dropPhoto(id); upd((o) => ({ ...o, orgPhotos: (o.orgPhotos || []).filter((x) => x !== id) })); };
+  // реквизиты
+  const req = parseRequisites(org.requisites || '');
+  const paste = async () => {
+    try {
+      const s = (await Clipboard.getStringAsync()).trim();
+      if (!s) { toast(__('В буфере пусто — сначала скопируйте реквизиты')); return; }
+      upd((o) => ({ ...o, requisites: s }));
+      toast(__('Реквизиты вставлены — строк: {a}', { a: parseRequisites(s).length }));
+    } catch { toast(__('Браузер не дал прочитать буфер — нажмите в поле и вставьте: Ctrl+V или «Вставить»')); }
+  };
+  // мессенджеры
+  const chans = channelsOf(org);
+  const on = chans.filter((c) => c.on && c.value.trim());
+  const setCh = (kind: Messenger, p: Partial<Channel>) => upd((o) => ({ ...o, channels: channelsOf(o).map((c) => (c.kind === kind ? { ...c, ...p } : c)) }));
+  const r = requestOf(pg);
+  const setReq = (p: Partial<ReturnType<typeof requestOf>>) => set((x) => ({ ...x, request: { ...requestOf(x), ...p } }));
+  const primary = on.find((c) => c.kind === r.primary) || on[0];
   return (
     <>
+      {langTabs}
       <Card>
         <H3>{__('Блоки страницы')}</H3>
         <T muted>{__('Включите нужные и расставьте стрелками. Обложка всегда первая.')}</T>
@@ -629,10 +766,76 @@ function StepPage({ t, org, upd, pg, set }: { t: Tenant; org: Org; upd: (fn: (o:
       </Card>
       <Card>
         <H3>{__('Куда придут заявки')}</H3>
-        <T muted>{__('Человек заполнит форму на странице — и откроется WhatsApp или почта с готовым текстом заявки на ваш номер или адрес.')}</T>
-        <Field label={__('Телефон для WhatsApp')} value={org.contact.phone} onChangeText={(v) => contact('phone', v)} placeholder="+7 900 000-00-00" keyboardType="phone-pad" />
-        <Field label={__('Почта')} value={org.contact.email} onChangeText={(v) => contact('email', v)} placeholder="tours@example.com" keyboardType="email-address" />
-        {!org.contact.phone.trim() && !org.contact.email.trim() ? <T style={{ color: C.warn }}>{__('Впишите телефон или почту — иначе заявки некуда отправить.')}</T> : null}
+        <T muted>{__('Отметьте мессенджеры, в которых удобно получать заявки, и впишите номер или ник.')}</T>
+        {chans.map((c) => {
+          const [, name, hint, color] = MESSENGERS.find(([k]) => k === c.kind)!;
+          return (
+            <View key={c.kind} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <Pressable onPress={() => setCh(c.kind, { on: !c.on })} accessibilityRole="checkbox" accessibilityState={{ checked: c.on }} accessibilityLabel={name}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 10, width: 136 }}>
+                <View style={{ width: 22, height: 22, borderRadius: 7, backgroundColor: c.on ? C.blue : C.well, boxShadow: c.on ? SH.blue : SH.inset, alignItems: 'center', justifyContent: 'center' }}>
+                  {c.on ? <Icon name="check" size={14} color="#fff" /> : null}
+                </View>
+                <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: color }} />
+                <Text style={{ flex: 1, fontFamily: F.semibold, fontSize: 14, color: C.ink }} numberOfLines={1}>{name}</Text>
+              </Pressable>
+              <TextInput value={c.value} onChangeText={(v) => setCh(c.kind, { value: v, on: c.on || !!v.trim() })} placeholder={hint} placeholderTextColor={C.muted}
+                accessibilityLabel={__('{a}: номер, ник или адрес', { a: name })} keyboardType={c.kind === 'email' ? 'email-address' : c.kind === 'whatsapp' || c.kind === 'viber' || c.kind === 'phone' ? 'phone-pad' : 'default'}
+                style={[inputStyle, { flex: 1, minWidth: 0, opacity: c.on ? 1 : 0.6 }]} />
+            </View>
+          );
+        })}
+        {!on.length ? <T style={{ color: C.warn }}>{__('Отметьте хотя бы один мессенджер или почту — иначе заявки некуда отправить.')}</T> : null}
+        <Label>{__('Как показать на странице')}</Label>
+        <Seg options={[['buttons', __('Кнопка на каждый мессенджер')], ['single', __('Одна кнопка')]] as const} value={r.mode} onChange={(m) => setReq({ mode: m })} />
+        {r.mode === 'single' && on.length ? (
+          <>
+            <Label>{__('Куда ведёт кнопка «Отправить заявку»')}</Label>
+            <Chips>{on.map((c) => <Pick key={c.kind} title={MESSENGERS.find(([k]) => k === c.kind)![1]} on={primary?.kind === c.kind} onPress={() => setReq({ primary: c.kind })} />)}</Chips>
+          </>
+        ) : null}
+        <T muted>{__('В WhatsApp и на почту заявка приходит готовым текстом. В Telegram, MAX, ВКонтакте и Viber текст копируется сам — человеку останется вставить его в открывшийся чат.')}</T>
+      </Card>
+      <Card>
+        <H3>{__('Об организаторе')}</H3>
+        <T muted>{__('Расскажите подробно: кто вы, сколько лет возите группы, что берёте на себя. Пустая строка — новый абзац.')}</T>
+        <Field value={tx.about} onChangeText={(v) => patchText({ about: v })} multiline rows={7} placeholder={__('Кто вы и почему с вами надёжно: сколько лет возите группы, сколько поездок провели')} />
+        <Label>{__('Фото: команда, группы, офис · {a}', { a: orgPhotos.length })}</Label>
+        <DropZone onFiles={addOrg}>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center' }}>
+            {orgPhotos.map((id, i) => (photos[id] ? (
+              <View key={id}>
+                <Image source={{ uri: photos[id] }} style={{ width: 84, height: 63, borderRadius: 9 }} />
+                <Pressable onPress={() => dropOrg(id)} accessibilityRole="button" accessibilityLabel={__('Удалить фото {a}', { a: i + 1 })}
+                  style={{ position: 'absolute', right: 3, top: 3, width: 22, height: 22, borderRadius: 11, backgroundColor: 'rgba(15,27,45,.75)', alignItems: 'center', justifyContent: 'center' }}>
+                  <Text style={{ color: '#fff', fontFamily: F.bold, fontSize: 13, lineHeight: 15 }}>×</Text>
+                </Pressable>
+              </View>
+            ) : null))}
+          </View>
+          <Button title={__('Добавить фото организатора')} icon="plus" kind="light" small onPress={async () => addOrg(await pickMany())} />
+          <T muted>{__('До {a} фото. На странице открываются на весь экран.', { a: MAX_ORG_PHOTOS })}</T>
+        </DropZone>
+      </Card>
+      <Card>
+        <H3>{__('Реквизиты')}</H3>
+        <T muted>{__('Скопируйте карточку компании из письма, 1С или банка и вставьте целиком — ИНН, банк и счёт разложатся по строкам сами. На странице реквизиты открываются по кнопке и копируются одним нажатием.')}</T>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+          <Button title={__('Вставить из буфера')} icon="copy" kind="light" small onPress={paste} />
+          {org.requisites ? <Button title={__('Очистить')} icon="trash" kind="ghost" small onPress={() => upd((o) => ({ ...o, requisites: '' }))} /> : null}
+        </View>
+        <Field label={__('Реквизиты компании')} value={org.requisites || ''} onChangeText={(v) => upd((o) => ({ ...o, requisites: v }))} multiline rows={6} placeholder={__('Например: ООО «Ромашка», ИНН, КПП, ОГРН, банк, БИК, расчётный счёт')} />
+        {req.length ? (
+          <View style={{ borderRadius: 14, backgroundColor: C.well, padding: 12, gap: 6 }}>
+            <Text style={{ fontFamily: F.bold, fontSize: 12, letterSpacing: 1, color: C.muted }}>{__('ТАК БУДЕТ НА СТРАНИЦЕ')}</Text>
+            {req.map(([k, v], i) => (
+              <View key={i} style={{ flexDirection: 'row', gap: 10 }}>
+                {k ? <Text style={{ width: 130, fontFamily: F.regular, fontSize: 13, color: C.muted }}>{k}</Text> : null}
+                <Text style={{ flex: 1, fontFamily: F.semibold, fontSize: 13, color: C.ink }}>{v}</Text>
+              </View>
+            ))}
+          </View>
+        ) : null}
       </Card>
       <Card>
         <H3>{__('Цвет и логотип')}</H3>

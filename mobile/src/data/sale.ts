@@ -56,6 +56,8 @@ export type PageText = {
   included: string;
   /** По строке на день программы. */
   days: string[];
+  /** Подробно о каждом дне: строки «09:00 Визит…» и свободный текст (раскрываются на странице). */
+  dayDetails?: string[];
   about: string;
   /** Тексты постов, поправленные руками; нет — собираются сами. */
   posts: Partial<Record<NetKey, string>>;
@@ -87,7 +89,84 @@ export type OPage = {
   url: string;
   slug: string;
   created: string;
+  /** Обложка страницы: одно фото, слайд-шоу из нескольких или видео (решение пользователя 22.10.2026). */
+  hero?: { mode: HeroMode; slides: string[]; video: string };
+  /** Фото к дню программы: номер дня → id фото. */
+  dayPhotos?: Record<string, string>;
+  /** Заявка: одна кнопка через главный мессенджер или кнопка на каждый мессенджер. */
+  request?: { mode: 'single' | 'buttons'; primary: Messenger };
 };
+export type HeroMode = 'photo' | 'slides' | 'video';
+export const heroOf = (pg: OPage) => pg.hero || { mode: 'photo' as HeroMode, slides: [], video: '' };
+export const requestOf = (pg: OPage) => pg.request || { mode: 'buttons' as const, primary: 'whatsapp' as Messenger };
+
+// ——— мессенджеры для заявок (решение пользователя 22.10.2026: «несколько мессенджеров или одну кнопку») ———
+export type Messenger = 'whatsapp' | 'telegram' | 'max' | 'vk' | 'viber' | 'wechat' | 'email' | 'phone';
+export type Channel = { kind: Messenger; value: string; on: boolean };
+/** [ключ, название, подсказка в поле, цвет кнопки]. Текст заявки сам подставляется в WhatsApp и почту; в остальные
+ *  мессенджеры он копируется — человек вставляет его в открывшийся чат. */
+export const MESSENGERS: [Messenger, string, string, string][] = [
+  ['whatsapp', 'WhatsApp', '+7 900 000-00-00', '#25d366'],
+  ['telegram', 'Telegram', '@username', '#229ed9'],
+  ['max', 'MAX', 'https://max.ru/…', '#7b3ff2'],
+  ['vk', __('ВКонтакте'), 'vk.com/…', '#0077ff'],
+  ['viber', 'Viber', '+7 900 000-00-00', '#7360f2'],
+  ['wechat', 'WeChat', 'WeChat ID', '#07c160'],
+  ['email', __('Почта'), 'tours@example.com', '#5b6576'],
+  ['phone', __('Телефон'), '+7 900 000-00-00', '#0f1b2d'],
+];
+export function channelsOf(org: Org): Channel[] {
+  const saved = org.channels || [];
+  return MESSENGERS.map(([kind]) => saved.find((c) => c.kind === kind) || {
+    kind,
+    value: kind === 'whatsapp' || kind === 'phone' ? org.contact.phone : kind === 'email' ? org.contact.email : '',
+    on: (kind === 'whatsapp' && !!org.contact.phone.trim()) || (kind === 'email' && !!org.contact.email.trim()),
+  });
+}
+const digits = (s: string) => s.replace(/\D/g, '');
+/** Ссылка на чат организатора; для WhatsApp и почты текст заявки добавит страница. */
+export function chatHref(c: Channel): string {
+  const v = c.value.trim();
+  if (!v) return '';
+  switch (c.kind) {
+    case 'whatsapp': return `https://wa.me/${digits(v)}`;
+    case 'telegram': return /^\+?\d[\d\s()-]{6,}$/.test(v) ? `https://t.me/+${digits(v)}` : `https://t.me/${v.replace(/^(https?:\/\/)?(t\.me\/)?@?/, '')}`;
+    case 'max': return /^https?:\/\//.test(v) ? v : `https://max.ru/${v.replace(/^@/, '')}`;
+    case 'vk': return `https://vk.me/${v.replace(/^(https?:\/\/)?(m\.)?(vk\.com|vk\.me)\//, '').replace(/^@/, '')}`;
+    case 'viber': return `viber://chat?number=%2B${digits(v)}`;
+    case 'email': return `mailto:${v}`;
+    case 'phone': return `tel:+${digits(v)}`;
+    default: return '';
+  }
+}
+
+// ——— реквизиты: вставили карточку компании — разложили на «ИНН: …», «Банк: …» ———
+const REQ = ['Полное наименование', 'Наименование банка', 'Банк получателя', 'Наименование', 'ИНН/КПП', 'ИНН', 'КПП', 'ОГРНИП', 'ОГРН', 'ОКПО', 'ОКВЭД', 'БИК', 'Расчётный счёт', 'Расчетный счет', 'Р/сч', 'Р/с',
+  'Корреспондентский счёт', 'Корреспондентский счет', 'Корр. счёт', 'Корр. счет', 'К/сч', 'К/с', 'Банк', 'Юридический адрес', 'Юр. адрес', 'Почтовый адрес',
+  'Фактический адрес', 'Адрес', 'Генеральный директор', 'Директор', 'Телефон', 'E-mail', 'Email', 'Сайт', 'БИН', 'ИИН', 'IBAN', 'SWIFT', 'Кбе'];
+const REQ_RE = new RegExp(`(${REQ.map((x) => x.replace(/[./]/g, (m) => `\\${m}`)).join('|')})(?![а-яёa-z])\\s*[:.\\-–—]?\\s*`, 'gi');
+export function parseRequisites(raw: string): [string, string][] {
+  const out: [string, string][] = [];
+  for (const line0 of raw.replace(/\t+/g, ': ').split(/\r?\n/)) {
+    const line = line0.trim();
+    if (!line) continue;
+    // «ИНН 7701234567 КПП 770101001» — несколько реквизитов в одной строке
+    // в середине строки реквизит — только «Метка: …» или «Метка 123…» («Банк» в «АО „Пример Банк“» — не реквизит)
+    const hits = [...line.matchAll(REQ_RE)].filter((m) => m.index === 0
+      || (/[\s,;]/.test(line[m.index! - 1]) && (m[0].includes(':') || /\d/.test(line[m.index! + m[0].length] || ''))));
+    if (hits.length) {
+      if (hits[0].index! > 0) out.push(['', line.slice(0, hits[0].index).replace(/[,;:]\s*$/, '').trim()]);
+      hits.forEach((m, i) => {
+        const value = line.slice(m.index! + m[0].length, i + 1 < hits.length ? hits[i + 1].index : undefined).replace(/[,;]\s*$/, '').trim();
+        if (value) out.push([m[1], value]);
+      });
+      continue;
+    }
+    const kv = line.match(/^([^:]{2,40}):\s*(.+)$/);
+    out.push(kv ? [kv[1].trim(), kv[2].trim()] : ['', line]);
+  }
+  return out;
+}
 
 export const pagesOf = (org: Org) => org.pages || [];
 export const isPro = (org: Org) => org.plan === 'pro';
@@ -106,6 +185,8 @@ export type PageLabels = {
   inc: Inc; hashtags: string[]; arrow: string;
   msg: { req: string; name: string; contact: string; comment: string; src: string };
   sentNote: string; needContact: string;
+  requisites: string; copyReq: string; reqCopied: string; more: string; writeDirect: string; sendRequest: string; sendVia: string;
+  pasted: string; wechat: string; close: string; prev: string; next: string; photoOf: string; mail: string; phone: string; vk: string;
 };
 const ruPlural = (n: number, one: string, few: string, many: string) => {
   const m10 = n % 10, m100 = n % 100;
@@ -124,6 +205,7 @@ export const PAGE_L: Record<Lang, PageLabels> = {
     hashtags: ['деловаяпоездка', 'бизнестур'], arrow: ' → ',
     msg: { req: 'Заявка', name: 'Имя', contact: 'Контакт', comment: 'Комментарий', src: 'Откуда' },
     sentNote: 'Откроется WhatsApp или почта с готовым текстом заявки — останется нажать «Отправить».', needContact: 'Впишите имя и контакт',
+    requisites: 'Реквизиты', copyReq: 'Скопировать реквизиты', reqCopied: 'Реквизиты скопированы', more: 'Подробнее', writeDirect: 'Или напишите напрямую', sendRequest: 'Отправить заявку', sendVia: 'Отправить через', pasted: 'Текст заявки скопирован — вставьте его в чат', wechat: 'WeChat ID скопирован — найдите нас в WeChat:', close: 'Закрыть', prev: 'Назад', next: 'Вперёд', photoOf: '{a} из {b}', mail: 'Почта', phone: 'Позвонить', vk: 'ВКонтакте',
   },
   en: {
     program: 'Day-by-day programme', included: 'What’s included', organizer: 'Organizer', dates: 'Dates', route: 'Route', duration: 'Duration', photos: 'Photos',
@@ -137,6 +219,7 @@ export const PAGE_L: Record<Lang, PageLabels> = {
     hashtags: ['businesstrip', 'businesstour'], arrow: ' → ',
     msg: { req: 'Request', name: 'Name', contact: 'Contact', comment: 'Comment', src: 'Source' },
     sentNote: 'WhatsApp or your email app will open with the request ready — just press “Send”.', needContact: 'Please enter your name and contact',
+    requisites: 'Company details', copyReq: 'Copy company details', reqCopied: 'Company details copied', more: 'More', writeDirect: 'Or message us directly', sendRequest: 'Send request', sendVia: 'Send via', pasted: 'Request text copied — paste it into the chat', wechat: 'WeChat ID copied — find us in WeChat:', close: 'Close', prev: 'Previous', next: 'Next', photoOf: '{a} of {b}', mail: 'Email', phone: 'Call', vk: 'VK',
   },
   zh: {
     program: '每日行程', included: '费用包含', organizer: '主办方', dates: '日期', route: '路线', duration: '天数', photos: '照片',
@@ -150,6 +233,7 @@ export const PAGE_L: Record<Lang, PageLabels> = {
     hashtags: ['商务考察', '企业参访'], arrow: ' → ',
     msg: { req: '报名', name: '姓名', contact: '联系方式', comment: '备注', src: '来源' },
     sentNote: '将打开 WhatsApp 或邮件并填好报名内容，点击“发送”即可。', needContact: '请填写姓名和联系方式',
+    requisites: '公司信息', copyReq: '复制公司信息', reqCopied: '公司信息已复制', more: '详情', writeDirect: '或直接联系我们', sendRequest: '提交报名', sendVia: '通过以下方式发送', pasted: '报名内容已复制——请粘贴到聊天中', wechat: '微信号已复制——在微信中添加我们：', close: '关闭', prev: '上一张', next: '下一张', photoOf: '{a} / {b}', mail: '邮件', phone: '致电', vk: 'VK',
   },
   kk: {
     program: 'Күндер бойынша бағдарлама', included: 'Не кіреді', organizer: 'Ұйымдастырушы', dates: 'Күндері', route: 'Бағыт', duration: 'Ұзақтығы', photos: 'Фотосуреттер',
@@ -163,6 +247,7 @@ export const PAGE_L: Record<Lang, PageLabels> = {
     hashtags: ['іссапар', 'бизнестур'], arrow: ' → ',
     msg: { req: 'Өтінім', name: 'Аты', contact: 'Байланыс', comment: 'Түсініктеме', src: 'Қайдан' },
     sentNote: 'WhatsApp немесе пошта дайын өтінім мәтінімен ашылады — «Жіберу» түймесін басу ғана қалады.', needContact: 'Атыңыз бен байланысыңызды жазыңыз',
+    requisites: 'Деректемелер', copyReq: 'Деректемелерді көшіру', reqCopied: 'Деректемелер көшірілді', more: 'Толығырақ', writeDirect: 'Немесе бізге тікелей жазыңыз', sendRequest: 'Өтінім жіберу', sendVia: 'Арқылы жіберу', pasted: 'Өтінім мәтіні көшірілді — оны чатқа қойыңыз', wechat: 'WeChat ID көшірілді — бізді WeChat-тан табыңыз:', close: 'Жабу', prev: 'Артқа', next: 'Алға', photoOf: '{a}/{b}', mail: 'Пошта', phone: 'Қоңырау шалу', vk: 'ВКонтакте',
   },
   ar: {
     program: 'البرنامج يومًا بيوم', included: 'ما يشمله البرنامج', organizer: 'المنظِّم', dates: 'التواريخ', route: 'المسار', duration: 'المدة', photos: 'الصور',
@@ -178,6 +263,7 @@ export const PAGE_L: Record<Lang, PageLabels> = {
     hashtags: ['رحلة_عمل', 'زيارات_الشركات'], arrow: ' ← ',
     msg: { req: 'طلب', name: 'الاسم', contact: 'التواصل', comment: 'ملاحظة', src: 'المصدر' },
     sentNote: 'سيفتح واتساب أو البريد مع نص الطلب جاهزًا — اضغط «إرسال» فقط.', needContact: 'اكتب اسمك وبيانات التواصل',
+    requisites: 'بيانات الشركة', copyReq: 'نسخ بيانات الشركة', reqCopied: 'تم نسخ بيانات الشركة', more: 'التفاصيل', writeDirect: 'أو راسلنا مباشرة', sendRequest: 'أرسل الطلب', sendVia: 'أرسل عبر', pasted: 'تم نسخ نص الطلب — الصقه في المحادثة', wechat: 'تم نسخ معرّف WeChat — ابحث عنا في WeChat:', close: 'إغلاق', prev: 'السابق', next: 'التالي', photoOf: '{a} من {b}', mail: 'البريد', phone: 'اتصال', vk: 'VK',
   },
   hi: {
     program: 'दिन-ब-दिन कार्यक्रम', included: 'क्या शामिल है', organizer: 'आयोजक', dates: 'तारीख़ें', route: 'रूट', duration: 'अवधि', photos: 'तस्वीरें',
@@ -191,6 +277,7 @@ export const PAGE_L: Record<Lang, PageLabels> = {
     hashtags: ['बिजनेसट्रिप', 'बिजनेसटूर'], arrow: ' → ',
     msg: { req: 'आवेदन', name: 'नाम', contact: 'संपर्क', comment: 'टिप्पणी', src: 'स्रोत' },
     sentNote: 'WhatsApp या ईमेल तैयार आवेदन के साथ खुलेगा — बस «भेजें» दबाएँ।', needContact: 'नाम और संपर्क लिखें',
+    requisites: 'कंपनी विवरण', copyReq: 'कंपनी विवरण कॉपी करें', reqCopied: 'कंपनी विवरण कॉपी हो गया', more: 'विस्तार से', writeDirect: 'या सीधे हमें लिखें', sendRequest: 'आवेदन भेजें', sendVia: 'इसके ज़रिए भेजें', pasted: 'आवेदन का टेक्स्ट कॉपी हो गया — इसे चैट में पेस्ट करें', wechat: 'WeChat ID कॉपी हो गया — हमें WeChat में खोजें:', close: 'बंद करें', prev: 'पिछला', next: 'अगला', photoOf: '{a} / {b}', mail: 'ईमेल', phone: 'कॉल करें', vk: 'VK',
   },
 };
 /** Страна на языке страницы (9 стран платформы). */
@@ -224,6 +311,13 @@ export function factsOf(p: OProgram): Facts {
   };
 }
 
+/** Подробно о дне по умолчанию: все события по времени с местом — организатор дописывает свободный текст. */
+export const dayDetailsOf = (p: OProgram) => p.days.map((d) => [
+  ...[...d.events].sort((a, b) => (normTime(a.t) || '12:00').localeCompare(normTime(b.t) || '12:00'))
+    .filter((e) => e.name.trim()).map((e) => `${normTime(e.t) ? `${normTime(e.t)} ` : ''}${e.name.trim()}${e.place.trim() ? ` — ${e.place.trim()}` : ''}`),
+  ...(d.note.trim() ? ['', d.note.trim()] : []),
+].join('\n'));
+
 export function defaultText(lang: Lang, p: OProgram, trip: OTrip | undefined, t: Tenant): PageText {
   const L = PAGE_L[lang];
   const f = factsOf(p);
@@ -240,6 +334,7 @@ export function defaultText(lang: Lang, p: OProgram, trip: OTrip | undefined, t:
     price: '',
     included: included.join('\n'),
     days: f.dayLines,
+    dayDetails: dayDetailsOf(p),
     about: t.tagline ? `${t.name} — ${t.tagline}` : t.name,
     posts: {},
   };
@@ -263,7 +358,7 @@ export const textIn = (pg: OPage, l: Lang): PageText => pg.texts[l] || pg.texts[
 // ——— всё, что нужно странице и баннеру на одном языке ———
 export type PageCtx = {
   lang: Lang; L: PageLabels; text: PageText; dates: string; route: string; country: string; f: Facts;
-  days: { label: string; city: string; line: string }[]; included: string[];
+  days: { label: string; city: string; line: string; details: string; photo: string }[]; included: string[];
   orgName: string; contact: Org['contact']; accent: string;
 };
 export function pageCtx(pg: OPage, l: Lang, p: OProgram, org: Org, t: Tenant): PageCtx {
@@ -277,7 +372,10 @@ export function pageCtx(pg: OPage, l: Lang, p: OProgram, org: Org, t: Tenant): P
   }
   return {
     lang: l, L, text, dates, route: f.cities.join(L.arrow), country: countryIn(p.country, l), f,
-    days: p.days.map((d, i) => ({ label: L.day(i + 1), city: d.city.trim(), line: (text.days[i] ?? f.dayLines[i] ?? '').trim() })),
+    days: p.days.map((d, i) => ({
+      label: L.day(i + 1), city: d.city.trim(), line: (text.days[i] ?? f.dayLines[i] ?? '').trim(),
+      details: (text.dayDetails?.[i] ?? dayDetailsOf(p)[i] ?? '').trim(), photo: pg.dayPhotos?.[String(i)] || '',
+    })),
     included: text.included.split('\n').map((x) => x.trim()).filter(Boolean),
     orgName: t.name, contact: org.contact, accent: t.accent,
   };

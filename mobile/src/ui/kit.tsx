@@ -181,12 +181,12 @@ export function Check({ on, onPress, children }: { on: boolean; onPress: () => v
 export const inputStyle = { borderRadius: 14, paddingHorizontal: 12, paddingVertical: 10, minHeight: 46, fontFamily: F.regular, fontSize: 14, color: C.ink, backgroundColor: C.well, boxShadow: SH.inset } as const;
 
 /** Поле ввода с подписью сверху. */
-export function Field({ label, value, onChangeText, placeholder, multiline, keyboardType }: { label?: string; value: string; onChangeText: (v: string) => void; placeholder?: string; multiline?: boolean; keyboardType?: KeyboardTypeOptions }) {
+export function Field({ label, value, onChangeText, placeholder, multiline, keyboardType, rows }: { label?: string; value: string; onChangeText: (v: string) => void; placeholder?: string; multiline?: boolean; keyboardType?: KeyboardTypeOptions; rows?: number }) {
   return (
     <View style={{ gap: 4 }}>
       {label ? <Text style={{ fontFamily: F.semibold, fontSize: 12.5, color: C.muted }}>{label}</Text> : null}
       <TextInput value={value} onChangeText={onChangeText} placeholder={placeholder} placeholderTextColor={C.muted} multiline={multiline} keyboardType={keyboardType}
-        accessibilityLabel={label || placeholder} style={[inputStyle, multiline && { minHeight: 64, textAlignVertical: 'top' }]} />
+        accessibilityLabel={label || placeholder} style={[inputStyle, multiline && { minHeight: rows ? rows * 20 + 20 : 64, textAlignVertical: 'top' }]} />
     </View>
   );
 }

@@ -83,3 +83,27 @@ export async function preparePhoto(uri: string): Promise<string> {
   const out = await ref.saveAsync({ format: SaveFormat.JPEG, compress: 0.82, base64: true });
   return `data:image/jpeg;base64,${out.base64}`;
 }
+
+// ——— видео для обложки страницы тура (решение пользователя 22.10.2026) ———
+/** Ролик кладётся в страницу целиком, поэтому короткий: 10–20 секунд, до этого размера. */
+export const MAX_VIDEO_MB = 15;
+export const isVideo = (dataUrl?: string) => !!dataUrl && dataUrl.startsWith('data:video');
+/** Выбранный ролик (mp4, webm, mov) → data:URL как есть; null — больше MAX_VIDEO_MB. */
+export async function prepareVideo(uri: string): Promise<string | null> {
+  const raw = await (await fetch(uri)).blob();
+  if (raw.size > MAX_VIDEO_MB * 1024 * 1024) return null;
+  const blob = raw.type.startsWith('video/') ? raw : new Blob([raw], { type: 'video/mp4' });
+  return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result)); r.onerror = () => rej(r.error); r.readAsDataURL(blob); });
+}
+/** Ролик для предпросмотра: ссылка blob: для своего плеера и сам Blob — его получает страница в рамке предпросмотра
+ *  (у рамки своё «пустое» происхождение, чужие ссылки blob: она не открывает), чтобы не вставлять мегабайты в HTML. */
+export function useVideoBlob(dataUrl?: string): { url: string; blob: Blob | null } {
+  const [v, setV] = useState<{ url: string; blob: Blob | null }>({ url: '', blob: null });
+  useEffect(() => {
+    if (!dataUrl || !web) { setV({ url: '', blob: null }); return; }
+    let live = true, made = '';
+    fetch(dataUrl).then((r) => r.blob()).then((b) => { if (live) { made = URL.createObjectURL(b); setV({ url: made, blob: b }); } }).catch(() => undefined);
+    return () => { live = false; if (made) URL.revokeObjectURL(made); };
+  }, [dataUrl]);
+  return v;
+}

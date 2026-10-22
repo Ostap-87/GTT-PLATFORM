@@ -12,7 +12,7 @@ import type { Leg as RouteLeg, Stop } from './route';
 import type { Tenant } from './tenant';
 import type { EventKind, TripEvent } from './trip';
 import type { Culture, Hotel, Meal, Weather } from './trip-base';
-import type { OPage } from './sale';
+import type { Channel, OPage } from './sale';
 import { LANG, __, dayLabel, rangeLabel } from '@/i18n';
 
 export type OEvent = { id: string; t: string; name: string; place: string; kind: EventKind };
@@ -23,7 +23,11 @@ export type OPerson = { id: string; name: string; company: string; role: string;
 export type OTrip = { id: string; programId: string; title: string; start: string; hotel: string; published: boolean; people: OPerson[] };
 /** pages — страницы тура для продажи (src/data/sale.ts); pagesMade — сколько создано всего (удаление не возвращает бесплатную);
  * plan — подписка: бесплатно 2 страницы, «pro» — без ограничений. */
-export type Org = { contact: { email: string; phone: string; site: string }; programs: OProgram[]; trips: OTrip[]; active: string; pages?: OPage[]; pagesMade?: number; plan?: 'free' | 'pro' };
+export type Org = {
+  contact: { email: string; phone: string; site: string }; programs: OProgram[]; trips: OTrip[]; active: string; pages?: OPage[]; pagesMade?: number; plan?: 'free' | 'pro';
+  /** Мессенджеры для заявок, фото команды и реквизиты — общие для всех страниц тура организатора (решение 22.10.2026). */
+  channels?: Channel[]; orgPhotos?: string[]; requisites?: string;
+};
 
 export const SOURCE_RU: Record<Source, string> = {
   manual: __('вручную'), template: __('из шаблона'), sample: __('пример'), xlsx: __('из Excel'), docx: __('из Word'), pdf: __('из PDF'), csv: __('из CSV'),
