@@ -45,27 +45,44 @@
     window.cancelIdleCallback = function (id) { clearTimeout(id); };
   }
 
-  // Ошибки запуска — на экран, а не белое окно
+  // Ошибки запуска — в журнал приложения (сервер окна, /__log) и на экран, а не белое окно
   var errs = [];
+  function report(msg) {
+    try {
+      var x = new XMLHttpRequest();
+      x.open('POST', '/__log', true);
+      x.setRequestHeader('Content-Type', 'text/plain;charset=UTF-8');
+      x.send(String(msg).slice(0, 4000));
+    } catch (e) { /* без сервера окна (сайт) — только экран */ }
+  }
+  report('старт · ' + navigator.userAgent + ' · ' + location.href);
   window.addEventListener('error', function (e) {
-    var t = e.target;
-    if (t && t !== window && (t.src || t.href)) errs.push('Не загрузился файл: ' + (t.src || t.href));
-    else errs.push((e.message || 'Ошибка') + (e.filename ? ' — ' + e.filename.split('/').pop() + ':' + e.lineno : ''));
+    var t = e.target, m;
+    if (t && t !== window && (t.src || t.href)) m = 'Не загрузился файл: ' + (t.src || t.href);
+    else m = (e.message || 'Ошибка') + (e.filename ? ' — ' + e.filename.split('/').pop() + ':' + e.lineno + ':' + e.colno : '') +
+      (e.error && e.error.stack ? '\n' + String(e.error.stack).slice(0, 600) : '');
+    errs.push(m);
+    report('ошибка · ' + m);
   }, true);
   window.addEventListener('unhandledrejection', function (e) {
-    var r = e.reason;
-    errs.push('Promise: ' + (r && (r.message || r)));
+    var r = e.reason, m = 'Promise: ' + (r && (r.stack || r.message || r));
+    errs.push(m);
+    report('ошибка · ' + m);
   });
   setTimeout(function () {
     var root = document.getElementById('root');
-    if (!root || root.children.length) return;
+    var n = root ? root.children.length : -1;
+    var txt = (document.body.innerText || '').replace(/\s+/g, ' ').slice(0, 120);
+    report('через 12 с · элементов в #root: ' + n + ' · текст: ' + txt + ' · ошибок: ' + errs.length);
+    if (n > 0 && txt) return;
     var box = document.createElement('div');
-    box.style.cssText = 'position:fixed;inset:0;padding:32px;font:15px/1.5 -apple-system,Helvetica,Arial,sans-serif;' +
-      'color:#1c2333;background:#f4f6fa;overflow:auto;white-space:pre-wrap;z-index:99999';
+    box.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;width:100%;height:100%;box-sizing:border-box;' +
+      'padding:32px;font:15px/1.5 -apple-system,Helvetica,Arial,sans-serif;color:#1c2333;background:#f4f6fa;' +
+      'overflow:auto;white-space:pre-wrap;z-index:99999';
     box.textContent = 'Приложение не запустилось в этом окне.\n\n' +
       'Пришлите снимок этого окна — по нему видно, что исправить.\n\n' +
       'Ошибки:\n' + (errs.length ? errs.slice(0, 8).join('\n') : '(нет сообщений)') + '\n\n' +
       'Браузерный движок: ' + navigator.userAgent + '\n' + 'Адрес: ' + location.href;
-    document.body.appendChild(box);
+    document.documentElement.appendChild(box);
   }, 12000);
 })();

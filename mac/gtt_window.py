@@ -6,15 +6,19 @@
   между запусками. Порт занят этим же приложением — окно подключается к нему.
 * Пути, которых нет среди файлов (/org, /join?code=…), отдают index.html — дальше маршрут
   разбирает роутер Expo.
-* Окно — pywebview (движок Safari). Если Safari старше 15 (macOS 11–12 без обновлений), а на Mac есть Chrome,
-  Яндекс Браузер, Edge или Chromium, — окно этого браузера в режиме приложения со своим профилем данных
-  (FORCE_BROWSER=1 в app.conf — всегда так). Без pywebview — браузер по умолчанию.
+* Окно: если на Mac есть Chrome, Яндекс Браузер, Edge или Chromium — окно этого браузера в режиме приложения
+  со своим профилем данных (тот же движок, на котором приложение проверяется); иначе pywebview (движок Safari;
+  WEBKIT=1 в app.conf — всегда так). Без pywebview — браузер по умолчанию.
+* Журнал ~/Library/Logs/<NAME>.log: версии macOS, Safari, Python, pywebview, запросы к серверу и сообщения
+  страницы (compat.js шлёт их на /__log) — по нему видно, почему окно пустое.
 """
 from __future__ import annotations
 
 import functools
 import http.server
+import json
 import os
+import platform
 import plistlib
 import subprocess
 import sys
@@ -24,6 +28,11 @@ import urllib.request
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 WEB = os.path.join(HERE, "web")
+REQUESTS = 0
+
+
+def log(*parts) -> None:
+    print(time.strftime("%Y-%m-%d %H:%M:%S"), *parts, flush=True)
 
 
 def load_conf(path: str) -> dict:
@@ -49,12 +58,24 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             self.path = "/index.html"
         return super().send_head()
 
+    def do_POST(self):
+        if self.path.startswith("/__log"):
+            n = min(int(self.headers.get("Content-Length") or 0), 20000)
+            log("страница:", self.rfile.read(n).decode("utf-8", "replace"))
+            self.send_response(204)
+            self.end_headers()
+            return
+        self.send_error(404)
+
     def end_headers(self):
         self.send_header("Cache-Control", "no-cache")
         super().end_headers()
 
-    def log_message(self, *args):
-        pass
+    def log_message(self, fmt, *args):
+        global REQUESTS
+        if REQUESTS < 60 and "__log" not in self.path:                # первые запросы — в журнал
+            REQUESTS += 1
+            log("запрос:", fmt % args)
 
 
 def ours(url: str) -> bool:
@@ -113,14 +134,24 @@ def main():
     base = serve(int(conf.get("PORT", "8731")))
     url = base + conf.get("START", "/")
     safari, exe = safari_major(), chromium()
-    print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} {url} Safari {safari or '?'}, Chromium: {exe or 'нет'}", flush=True)
-    if exe and (conf.get("FORCE_BROWSER") == "1" or 0 < safari < 15):
-        run_in_chromium(exe, url, conf)
-        os._exit(0)
     try:
         import webview
+        wv = getattr(webview, "__version__", "?")
+    except ImportError:
+        webview, wv = None, "нет"
+    log(f"запуск {conf.get('NAME')}: {url} · macOS {platform.mac_ver()[0] or '?'} ({platform.machine()}) · "
+        f"Safari {safari or '?'} · Python {platform.python_version()} · pywebview {wv} · браузер {exe or 'нет'}")
+    if exe and conf.get("WEBKIT") != "1":
+        log("окно: браузер в режиме приложения")
+        run_in_chromium(exe, url, conf)
+        os._exit(0)
+    log("окно: pywebview")
+    try:
+        if webview is None:
+            raise ImportError
     except ImportError:
         import webbrowser
+        log("pywebview нет — открываю браузер по умолчанию")
         webbrowser.open(url)
         while True:
             time.sleep(3600)
