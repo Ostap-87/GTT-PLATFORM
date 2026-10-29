@@ -5,3 +5,4 @@ node_modules/
 miniprogram-ci-key*
 server/data/runtime/
 .DS_Store
+__pycache__/
